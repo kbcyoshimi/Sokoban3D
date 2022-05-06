@@ -1,3 +1,4 @@
+import * as THREE from "../modules/three.module.js";
 import { Canvas } from "./canvas";
 
 export class MainCanvas extends Canvas{

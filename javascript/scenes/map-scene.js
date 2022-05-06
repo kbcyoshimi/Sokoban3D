@@ -1,4 +1,5 @@
-import { GLTFLoader } from "../../public/js/GLTFLoader";
+import * as THREE from "../modules/three.module.js";
+import { GLTFLoader } from "../modules/GLTFLoader";
 
 export class MapScene{
     

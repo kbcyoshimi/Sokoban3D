@@ -1,3 +1,5 @@
+import * as THREE from "../modules/three.module.js"; 
+
 export class Canvas{
 
     _canvas;
