@@ -28,7 +28,7 @@ export class CanvasManager{
     constructor (){
         this._pixelRatio = window.devicePixelRatio;
 
-        this._scene = new MapScene(this.test);
+        this._scene = new MapScene(this.test, this);
 
         this._main = new MainCanvas(this._pixelRatio, this.test.s);
         this._map = new MapCanvas(this._pixelRatio);
@@ -37,7 +37,7 @@ export class CanvasManager{
         //this._tick();
     }
 
-    _render (){
+    render (){
         this._main._render(this._scene.scene);
         this._map._render(this._scene.scene);
         this._manual._render(this._scene.scene);
