@@ -15,7 +15,7 @@ export class Canvas{
 		this._renderer.setSize(this._canvas.clientWidth, this._canvas.clientHeight);
     }
 
-    _render (scene){
+    render (scene){
         this._renderer.render(scene, this._camera);
     }
 }
