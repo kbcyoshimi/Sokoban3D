@@ -24,8 +24,8 @@ export class MapScene{
         //this._game.map
         for(var z = 0; z < data.map.length; z++) {
             for(var x = 0; x < data.map[z].length; x++) {
-                switch(data.map[z][x]){
-                    case 1:
+                switch(data.map[z][x] / 10000){
+                    case 2:
                         this._wallGenerate(x * 100, 0, z * 100);
                         break;
                     default:
@@ -40,7 +40,7 @@ export class MapScene{
         // 平行光源
         const light = new THREE.DirectionalLight(0xFFFFFF);
         light.intensity = 2; // 光の強さを倍に
-        light.position.set(data.start[0] * 100, +200, 1400);
+        light.position.set(data.start.x * 100, +200, 1400);
         // シーンに追加
         this._scene.add(light);
 
@@ -51,7 +51,7 @@ export class MapScene{
             (gltf) => {
                 this._you = gltf.scene;
                 this._you.scale.set(100.0, 100.0, 100.0);
-                this._you.position.set(data.start[0] * 100, 0, 1400);
+                this._you.position.set(data.start.x * 100, 0, 1400);
                 this._scene.add(this._you);
                 this._wallGenerate(15 * 100, 0, 15 * 100);
             }
@@ -66,6 +66,10 @@ export class MapScene{
         let box = new THREE.Mesh(this._wallData.geometry, this._wallData.material);
         box.position.set(x, y, z);
         this._scene.add(box);
+    }
+
+    moveCheck (x, z){
+
     }
 
     move (x, z){
