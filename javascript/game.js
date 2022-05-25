@@ -35,13 +35,12 @@ export class Game{
 			}
 		}
 
-		let map = this._map;
-		Object.keys(positions).forEach(function (key) {
-			let tile = map[this[key].position.z][this[key].position.x];
-			this[key].isPassing = Math.round(tile / 1000) % 10 === 0;
-		},positions)
-		console.log(positions)
-		return positions;
+		for(let direction in result){
+			let destination = result[direction].position;
+			result[direction]["isPassing"] = this.checkPassing(destination.x, destination.z);
+		}
+		return result;
+	}
 	}
 
 }
