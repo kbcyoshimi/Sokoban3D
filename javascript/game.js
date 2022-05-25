@@ -1,22 +1,22 @@
 export class Game{
 	
-	_data;
-	_position;
+	_orgData;
+	_player;
+	_boxs;
 	_map;
-	_orgMap;
 
 	constructor (data){
-		this._data = data;
-		this._position = data.start;
+		this._orgData = JSON.parse(JSON.stringify(data));
+		this._player = data.start;
+		this._boxs = data.boxs;
 		this._map = Array.from(data.map);
-		this._orgMap = Array.from(data.map);
 	}
 
 	//プレイヤーがどの方向に動けるかチェック
 	moveCheck(){
-		let x = this._position.x;
-		let z = this._position.z;
-		let positions = {
+		let x = this._player.x;
+		let z = this._player.z;
+		let result = {
 			"right" : {
 				"isPassing" : false,
 				"position" : {"x" : x + 1, "z" : z}
