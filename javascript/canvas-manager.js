@@ -93,7 +93,21 @@ export class CanvasManager{
             this._game = new Game(this._test);
             //仮コードここまで
 
-            this._world.youMove(this._way[direction]["position"]["x"], this._way[direction]["position"]["z"]);
+            this._animetionRequest = {
+                "startTime" : performance.now(),
+                "distance" : this._world.squareSize,
+                "totalTime" : 100,
+                "target" : [
+                    {
+                        "code" : 0,
+                        "progress" : 0,
+                        "direction" : direction
+                    }
+                ]
+            }
+
+            this._waiting = true;
+
             this._turnEnd();
         }else {
             console.log("notice : Cannot move to the " + direction);
@@ -117,8 +131,36 @@ export class CanvasManager{
     }
 
     _animetion (){
+        //アニメーション要求がなければreturn
         if (this._animetionRequest === null) return;
 
+        //経過時間をミリ秒で取得
+        let timeProgress = performance.now() - this._animetionRequest.startTime;
+        
+        if (timeProgress >= this._animetionRequest.totalTime) {
+            //アニメーション終了時の処理
+            //誤差の修正
+            for (let index in this._animetionRequest.target) {
+                let measurementError = this._animetionRequest.distance - this._animetionRequest.target[index].progress;
+                this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, measurementError);
+            }
+            //要求の削除
+            this._animetionRequest = null;
+            //待ち状態の解除
+            this._waiting = false;
+        }else {
+            //アニメーション処理
+            //進捗を割合で取得
+            let progress = timeProgress / this._animetionRequest.totalTime;
+            //全ての対象オブジェクトにフレームごとの移動距離を計算し動かす
+            for (let index in this._animetionRequest.target) {
+                //進捗を移動距離に変換する
+                let valueProgress = this._animetionRequest.distance * progress;
+                let distance = valueProgress - this._animetionRequest.target[index].progress;
+                this._animetionRequest.target[index].progress = valueProgress;
+                this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, distance);
+            }
+        }
     }
 
     //毎フレームごとに画面を更新する
