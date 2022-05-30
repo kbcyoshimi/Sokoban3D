@@ -47,13 +47,14 @@ export class Game{
 		for(let i = 0; i < this._boxs.length; i++){
 			let x = this._boxs[i].x;
 			let z = this._boxs[i].z;
-			this.objectsMove(this._boxs[i]);
+			this.objectsMove(this._boxs[i], true);
 		}
-		this.objectsMove(this._player,true);
+		this.objectsMove(this._player);
 		
 	}
 
-	objectsMove(object, isPlayer = false){
+	//物体を何かの方法で動かす関数 boxならisBoxにTrue
+	objectsMove(object, isBox = false){
 		let tile = this._map[object.z][object.x];
 		switch(this.extract(tile,5)){
 			//ベルトコンベアー
@@ -64,7 +65,9 @@ export class Game{
 			//テレポート
 			case 5:
 				if(this.extract(tile,3) === 8) return;
-				if(isPlayer) return;
+				if(!isBox){
+					throw "Playerがテレポートマスにいます。";
+				}
 				let teleportId = this.extract(tile,1);
 				this.teleport(object, teleportId);
 				break;
@@ -73,7 +76,7 @@ export class Game{
 		}
 	}
 
-	//positionで指定したものをdirectionの方向へ動かす。
+	//positionに代入したものをdirectionの方向へ動かす。
 	convey(position, direction){
 		//移動先の特定
 		let destination = JSON.parse(JSON.stringify(position));
@@ -116,12 +119,15 @@ export class Game{
 					console.log("対応先を発見" + JSON.stringify(destination));
 
 					//移動先に障害物があるか確認
-					if(!this.checkPassing(destination.x, destination.z, true)) return;
+					if(!this.checkPassing(destination.x, destination.z, true)){
+						console.log("テレポートできません。")
+						return;
+					} 
 					//対象物を移動させる
 					console.log("\u001b[32m" + JSON.stringify(position) + "から");
 					position.x = destination.x;
 					position.z = destination.z;
-					console.log("\u001b[32m" + JSON.stringify(position) + "へ移動しました。");
+					console.log("\u001b[32m" + JSON.stringify(position) + "へテレポートしました。");
 					return;
 				}
 			}
@@ -137,9 +143,9 @@ export class Game{
 		return num;
 	}
 
-	//指定した座標が通行可能かを確認 荷物、プレイヤーが存在していたり、通行不可ブロックだとFalseを返す。
+	//指定した座標が通行可能かを確認　可能ならTrueを返す。
 	//荷物だけ通れる障害物を通れるとするならisBox引数にTrueを挿入する。
-	checkPassing(x, z, isBox){
+	checkPassing(x, z, isBox = false){
 		//ブロックをチェック
 		let tile = this._map[z][x];
 		let passing = this.extract(tile, 4);
