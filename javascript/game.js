@@ -163,4 +163,12 @@ export class Game{
 		return true;
 	}
 
+	//２つの座標が一致しているか確認
+	comparePosition(positionA, positionB){
+		if((positionA.x === positionB.x) && (positionA.z === positionB.z)){
+			return true;
+		}
+		return false;
+	}
+
 }
