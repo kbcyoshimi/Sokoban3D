@@ -1,3 +1,5 @@
+import { Piece } from "./piece";
+
 export class Game{
 	
 	_orgData;
@@ -7,8 +9,11 @@ export class Game{
 
 	constructor (data){
 		this._orgData = JSON.parse(JSON.stringify(data));
-		this._player = data.start;
-		this._boxs = data.boxs;
+		this._player = new Piece(data.start.x, data.start.z, "Player");
+		this._boxs = [];
+		for(let i = 0; i < data.boxs.length; i++){
+			this._boxs[i] = new Piece(data.boxs[i].x, data.boxs[i].z, "Box");
+		}
 		this._map = Array.from(data.map);
 	}
 
@@ -19,119 +24,358 @@ export class Game{
 		let result = {
 			"right" : {
 				"isPassing" : false,
-				"position" : {"x" : x + 1, "z" : z}
+				"position" : {"x" : x + 1, "z" : z},
+				"boxDestination" : {"x" : x + 2, "z" : z}
 			},
 			"left" : {
 				"isPassing" : false,
-				"position" : {"x" : x - 1, "z" : z}
+				"position" : {"x" : x - 1, "z" : z},
+				"boxDestination" : {"x" : x - 2, "z" : z}
 			},
 			"down" : {
 				"isPassing" : false,
-				"position" : {"x" : x, "z" : z + 1}
+				"position" : {"x" : x, "z" : z + 1},
+				"boxDestination" : {"x" : x, "z" : z + 2}
 			},
 			"up" : {
 				"isPassing" : false,
-				"position" : {"x" : x, "z" : z - 1}
+				"position" : {"x" : x, "z" : z - 1},
+				"boxDestination" : {"x" : x, "z" : z - 2}
 			}
 		}
 
 		for(let direction in result){
 			let destination = result[direction].position;
-			result[direction]["isPassing"] = this.checkPassing(destination.x, destination.z);
+			let isPassing = true;
+
+			//ブロックをチェック
+			let tile = this._map[destination.z][destination.x];
+			let passing = this.extract(tile, 4);
+			if(passing !== 0){
+				isPassing = false;
+			}
+			//荷物をチェック
+			for(const box of this._boxs){
+				if(box.comparePosition(destination.x, destination.z)){
+					let boxDestination = result[direction].boxDestination;
+					if(!this.checkPassing(boxDestination.x, boxDestination.z, true)){
+						//console.log(direction + "に荷物はありますが運ぶことは出来ません。")
+						isPassing = false;
+					}
+				}
+			}
+			result[direction]["isPassing"] = isPassing;
 		}
 		return result;
 	}
+
+	//プレイヤー移動処理
+	move(direction){
+		//プレイヤーが移動できるか確認
+		let ways = this.moveCheck();
+		let way = ways[direction];
+		if(!way.isPassing){
+			throw "その方向には動けません。";
+		}
+		let directionNum = 0;
+		switch(direction){
+			case "left":
+				directionNum = 1;
+				break;
+			case "up":
+				directionNum = 2;
+				break;
+			case "right":
+				directionNum = 3;
+				break;
+			case "down":
+				directionNum = 4;
+				break;
+			default:
+				throw "不適切な方向です。";
+		}
+
+		//荷物の移動を伴うか確認
+		let ConveyBox = null;
+		let playerDestination = way.position;
+		for(const box of this._boxs){
+			let isSame = box.comparePosition(playerDestination.x, playerDestination.z);
+			if(isSame){
+				console.log("Playerの行先にBoxがあります")
+				ConveyBox = box;
+				break;
+			}
+		}
+
+		//荷物の移動を伴う場合、荷物が移動できるか確認(いらないかもしれない)
+		let isBoxPassing = false;
+		if(ConveyBox){
+			let x = this._player.x;
+			let z = this._player.z;
+			switch(directionNum){
+				case 1:
+					x -= 2;
+					break;
+				case 2:
+					z -= 2;
+					break;
+				case 3:
+					x += 2;
+					break;
+				case 4:
+					z += 2;
+					break;
+				default:
+					throw "不適切な方向です。";
+			}
+			
+			isBoxPassing = this.checkPassing(x, z, true);
+			if(isBoxPassing){
+				console.log("\u001b[34m" + "x = " + x + "z = " + z + "に荷物通れるよ");
+			}
+		}
+
+		//荷物の移動
+		if(ConveyBox){
+			if(isBoxPassing){
+				console.log("荷物動きます");
+				this.convey(ConveyBox,directionNum);
+			}
+		}
+		//プレイヤーの移動
+		this.convey(this._player,directionNum);
+		this.turnend();
+	}
+
 	//ターンエンド時
 	turnend(){
-		//荷物のチェック
+		//荷物
 		for(let i = 0; i < this._boxs.length; i++){
 			let x = this._boxs[i].x;
 			let z = this._boxs[i].z;
-			this.objectsMove(this._boxs[i], true);
+			this.pieceMove(this._boxs[i]);
 		}
-		this.objectsMove(this._player);
-		
+		//プレイヤー
+		this.pieceMove(this._player);
+		//スイッチON
+		//ここの機構は関数化して外に出すべきかもしれない。
+		const maxSwitchId = 9;
+		const OFFSwitchTile = 60020;
+		for(let id = 0; id <= maxSwitchId; id++){
+			let target = this.searchPosition(OFFSwitchTile + id);
+			//OFFになっているスイッチを見つけたら
+			if(target){
+				let x = target.x;
+				let z = target.z;
+				//かつ上に荷物があったら
+				if(this.existsBox(x, z)){
+					this.switchON(x, z);
+				}
+			}
+		}
+		//スイッチOFF
+		const ONSwitchTile = 60010;
+		for(let id = 0; id <= maxSwitchId; id++){
+			let target = this.searchPosition(ONSwitchTile + id)
+			//ONになっているスイッチを見つけたら
+			if(target){
+				let x = target.x;
+				let z = target.z;
+				//かつ上に荷物がなかったら
+				if(!this.existsBox(x, z)){
+					this.switchOFF(x, z);
+				}
+			}
+		}
+		//Search関数に正規表現いるかも？
 	}
 
-	//物体を何かの方法で動かす関数 boxならisBoxにTrue
-	objectsMove(object, isBox = false){
-		let tile = this._map[object.z][object.x];
-		switch(this.extract(tile,5)){
+	//Pieceに送る命令を振り分ける関数
+	pieceMove(piece){
+		let isBox = piece.code == "Box"
+		let tile = this._map[piece.z][piece.x];
+		switch(this.extract(tile, 5)){
 			//ベルトコンベアー
 			case 4:
 				let direction = this.extract(tile,3);
-				this.convey(object,direction);
+				this.convey(piece, direction);
 				break;
 			//テレポート
 			case 5:
-				if(this.extract(tile,3) === 8) return;
+				if(this.extract(tile, 3) === 8) return;
 				if(!isBox){
 					throw "Playerがテレポートマスにいます。";
 				}
-				let teleportId = this.extract(tile,1);
-				this.teleport(object, teleportId);
+				let teleportId = this.extract(tile, 1);
+				this.teleport(piece, teleportId);
+				break;
+			case 6:
+				//荷物がスイッチの上にあったら、ではなく
+				//スイッチの上に荷物があったら、にしたいので
+				//turnendの方に書きたい。
+				//this.switchON(piece.x, piece.z);
+				break;
+			//穴
+			case 8:
+				this.drop(piece);
 				break;
 			default:
 				break;
 		}
 	}
 
-	//positionに代入したものをdirectionの方向へ動かす。
-	convey(position, direction){
+	//pieceに移動する命令を送る関数。
+	convey(piece, direction){
 		//移動先の特定
-		let destination = JSON.parse(JSON.stringify(position));
+		let x = piece.x;
+		let z = piece.z;
 		switch(direction) {
 			case 1:
-				destination.x -= 1;
+				x -= 1;
 				break;
 			case 2:
-				destination.z -= 1;
+				z -= 1;
 				break;
 			case 3:
-				destination.x += 1;
+				x += 1;
 				break;
 			case 4:
-				destination.z += 1;
+				z += 1;
 				break;
 			default:
 				throw "不適切な方向です。";
 				break;
 		}
 
-		//移動先に障害物があるか確認
-		if(!this.checkPassing(destination.x, destination.z)) return;
-
 		//対象物を移動させる
-		console.log("\u001b[32m" + JSON.stringify(position) + "から");
-		position.x = destination.x;
-		position.z = destination.z;
-		console.log("\u001b[32m" + JSON.stringify(position) + "へ移動しました。");
+		console.log("\u001b[32m" + JSON.stringify(piece) + "から");
+		piece.move(x, z);
+		console.log("\u001b[32m" + JSON.stringify(piece) + "へ移動しました。");
 	}
 
-	//positionにある物をteleportIdが対応する場所へテレポートさせる。
-	teleport(position, teleportId){
+	//pieceにテレポートする関数を送る。
+	teleport(piece, teleportId){
+		let teleportTile = 52810
+		let tile = teleportTile + teleportId;
+		let position = this.searchPosition(tile);
+		console.log("teleport" + JSON.stringify(position))
+		let x = position.x;
+		let z = position.z;
+		//移動先に障害物があるか確認
+		if(!this.checkPassing(x, z, true)){
+			console.log("テレポートできません。")
+			return;
+		} 
+		console.log("対応先を発見");
+		//対象物を移動させる
+		console.log("\x1b[31m" + JSON.stringify(piece) + "から");
+		piece.move(x, z);
+		console.log("\x1b[31m" + JSON.stringify(piece) + "へテレポートしました。");
+		return;
+	}
+
+	//x,zのスイッチ操作
+	switchON(x, z){
+		//対象のドアを探す。
+		let tile = this._map[z][x];
+		let pairPosition = this.searchPairPosition(tile);
+		if(pairPosition){
+			this.openDoor(pairPosition.x, pairPosition.z)
+			const pushSwitchNum = 10;
+			this._map[z][x] -= pushSwitchNum;
+			console.log("open door");
+			return;
+		}
+		throw "スイッチに対応するドアがありません";
+	}
+
+	//x,zのスイッチの状態をOFFに
+	switchOFF(x, z){
+		//対象のドアを探す。
+		let tile = this._map[z][x];
+		let pairPosition = this.searchPairPosition(tile);
+		if(pairPosition){
+			this.closeDoor(pairPosition.x, pairPosition.z)
+			const pushSwitchNum = 10;
+			this._map[z][x] += pushSwitchNum;
+			console.log("close door");
+			return;
+		}
+		throw "スイッチに対応するドアがありません";
+	}
+
+	//pieceを穴に落とす関数
+	drop(piece){
+		let x = piece.x;
+		let z = piece.z;
+		let tile = this._map[z][x];
+		let hasBox = this.extract(tile,2);
+		if(hasBox === 1){
+			console.log("既にBOXがあります")
+			return;
+		}
+		//対象のタイルを変更
+		this._map[z][x] -= 2010;
+
+		//対象の荷物を削除
+		this._boxs = this._boxs.filter(function(box) {
+			return box !== piece;
+		});
+		console.log("穴に箱が落ちました。")
+	}
+
+	//ドアを開ける関数
+	openDoor(x, z){
+		this._map[z][x] -= 1010;
+	}
+
+	//ドアを閉める関数
+	closeDoor(x, z){
+		this._map[z][x] += 1010;
+	}
+
+	//tileAと一致する座標を返す
+	searchPosition(tileA){
 		for(let z = 0; z < this._map.length; z++){
 			for(let x = 0; x < this._map[z].length; x++){
-				let tile = this._map[z][x];
-				if(teleportId === this.extract(tile, 1)){
-					if(this.extract(tile, 3) === 7) continue;
-					let destination = {"x": x, "z": z};
-					console.log("対応先を発見" + JSON.stringify(destination));
-
-					//移動先に障害物があるか確認
-					if(!this.checkPassing(destination.x, destination.z, true)){
-						console.log("テレポートできません。")
-						return;
-					} 
-					//対象物を移動させる
-					console.log("\u001b[32m" + JSON.stringify(position) + "から");
-					position.x = destination.x;
-					position.z = destination.z;
-					console.log("\u001b[32m" + JSON.stringify(position) + "へテレポートしました。");
-					return;
+				let tileB = this._map[z][x];
+				if(tileA === tileB){
+					console.log("tileが一致しました。");
+					let result = {"x" : x, "z" : z};
+					return result;
 				}
 			}
 		}
+		return false;
+	}
+
+
+	//tileAとIDの一致するタイルの座標を返す
+	searchPairPosition(tileA){
+		let idA = this.extract(tileA, 1);
+		for(let z = 0; z < this._map.length; z++){
+			for(let x = 0; x < this._map.length; x++){
+				let tileB = this._map[z][x];
+				let idB = this.extract(tileB, 1);
+				if(idA === idB){
+					console.log("ペアのタイルの座標を見つけました。");
+					let result = {"x" : x, "z" : z};
+					return result;
+				}
+			}
+		}
+		return false;
+	}
+
+	//x,zにboxがあるか
+	existsBox(x, z){
+		for(const box of this._boxs){
+			if(box.comparePosition(x, z)){
+				console.log("x = " + x + " z = " + z + " に荷物があります。")
+				return true;
+			}
+		}
+		return false;
 	}
 
 	//指定した桁を取得する
@@ -165,16 +409,13 @@ export class Game{
 		if(this._player.x === x && this._player.z === z){
 			return false;
 		}
-		console.log("x = " + x + " z = " + z + " は通行可能です。")
+		//console.log("x = " + x + " z = " + z + " は通行可能です。")
 		return true;
 	}
 
-	//２つの座標が一致しているか確認
-	comparePosition(positionA, positionB){
-		if((positionA.x === positionB.x) && (positionA.z === positionB.z)){
-			return true;
-		}
-		return false;
+	//コンソール表示
+	dataPrint(){
+		console.log("print");
+		console.log(this._boxs);
 	}
-
 }
