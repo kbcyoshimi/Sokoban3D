@@ -44,6 +44,7 @@ export class Game{
 			}
 		}
 
+		//プレイヤーの上下左右をチェック
 		for(let direction in result){
 			let destination = result[direction].position;
 			let isPassing = true;
@@ -194,12 +195,6 @@ export class Game{
 				let teleportId = this.extract(tile, 1);
 				this.teleport(piece, teleportId);
 				break;
-			case 6:
-				//荷物がスイッチの上にあったら、ではなく
-				//スイッチの上に荷物があったら、にしたいので
-				//turnendの方に書きたい。
-				//this.switchON(piece.x, piece.z);
-				break;
 			//穴
 			case 8:
 				this.drop(piece);
@@ -240,7 +235,7 @@ export class Game{
 
 	//pieceにテレポートする関数を送る。
 	teleport(piece, teleportId){
-		let teleportTile = 52810
+		const teleportTile = 52810
 		let tile = teleportTile + teleportId;
 		let position = this.searchPosition(tile);
 		console.log("teleport" + JSON.stringify(position))
@@ -321,17 +316,19 @@ export class Game{
 
 	//tileAと一致する座標を返す
 	searchPosition(tileA){
+		let result = false;
 		for(let z = 0; z < this._map.length; z++){
 			for(let x = 0; x < this._map[z].length; x++){
 				let tileB = this._map[z][x];
 				if(tileA === tileB){
-					console.log("tileが一致しました。");
-					let result = {"x" : x, "z" : z};
-					return result;
+					if(result){
+						throw "一致する座標が複数見つかりました。";
+					}
+					result = {"x" : x, "z" : z};
 				}
 			}
 		}
-		return false;
+		return result;
 	}
 
 	//tileAと一致する座標を配列にして返す
@@ -380,7 +377,7 @@ export class Game{
 
 	//指定した桁を取得する
 	extract(tile, digit){
-		let maxDigit = 5;
+		const maxDigit = 5;
 		if(maxDigit < digit){
 			throw "不適切な値です。";
 		}
