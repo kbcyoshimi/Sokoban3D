@@ -48,6 +48,7 @@ export class CanvasManager{
         }
     }
 
+    //現在は直接ステージに飛ぶ
     _titleKeydown (event){
         this._getStageData("./stages/test.json");
     }
@@ -143,6 +144,7 @@ export class CanvasManager{
             for (let index in this._animetionRequest.target) {
                 let measurementError = this._animetionRequest.distance - this._animetionRequest.target[index].progress;
                 this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, measurementError);
+                if (this._animetionRequest.target[index].code === 0) this._main.moveCamera(this._animetionRequest.target[index].direction, measurementError);
             }
             //要求の削除
             this._animetionRequest = null;
@@ -159,13 +161,22 @@ export class CanvasManager{
                 let distance = valueProgress - this._animetionRequest.target[index].progress;
                 this._animetionRequest.target[index].progress = valueProgress;
                 this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, distance);
+                if (this._animetionRequest.target[index].code === 0) this._main.moveCamera(this._animetionRequest.target[index].direction, distance); 
             }
         }
+    }
+
+    //視点と連動したyouオブジェクトの回転
+    _rotation (){
+        if (this._waiting) return;
+        if (this._world.code !== "Stage") return;
+        this._world.you.setRotationFromEuler(this._main.camera.rotation);
     }
 
     //毎フレームごとに画面を更新する
     tick (){
         this._animetion();
+        this._rotation();
         this._main.render(this._world.scene);
         this._map.render(this._world.scene);
         this._manual.render(this._world.scene);
@@ -181,6 +192,9 @@ export class CanvasManager{
             data = JSON.parse(xhr.response);
             this._game = new Game(data);
             this._world = new StageScene(data, () => {
+                this._main.startStageMode(data);
+                this._map.startStageMode(data);
+                this._manual.startStageMode(data);
                 this._stageStart();
             });
 

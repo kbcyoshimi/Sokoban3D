@@ -8,6 +8,8 @@ export class Canvas{
     _renderer;
     _camera;
 
+    _mode = null;
+
     constructor (selector){
         this._canvas = document.querySelector(selector);
     	this._renderer = new THREE.WebGLRenderer({
@@ -21,13 +23,50 @@ export class Canvas{
         this._camera.position.set(x, y, z);
     }
 
-    moveCamera (x, y, z){
+    moveCamera(direction, distance){
+
+        let x = 0;
+        let z = 0;
+
+        switch (direction){
+            case "left" :
+                x = -distance;
+                break;
+            case "up" :
+                z = -distance;
+                break;
+            case "right" :
+                x = distance;
+                break;
+            case "down" :
+                z = distance;
+                break;
+            default:
+                break;
+        }
+        
         this._camera.position.x += x;
-        this._camera.position.y += y;
         this._camera.position.z += z;
+
+        return {
+            "x" : x,
+            "z" : z,
+        };
+    }
+
+    startStageMode (){
+        this._mode = "Stage";
+    }
+
+    endStageMode (){
+        this._mode = null;
     }
 
     render (scene){
         this._renderer.render(scene, this._camera);
+    }
+
+    get camera (){
+        return this._camera;
     }
 }

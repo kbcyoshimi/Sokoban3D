@@ -8,7 +8,6 @@ export class StageScene extends Scene{
         "you" : "model/you.glb",
         "box" : "model/box.glb"
     }
-    _loadData = [];
 
     _squareSize = 100;
 
@@ -17,9 +16,12 @@ export class StageScene extends Scene{
         "material": new THREE.MeshNormalMaterial()
     };
 
+    _you = null;
+    _youScale = new THREE.Vector3(100, 90, 100);
+    _loadData = [];
     _moveObject = [];
 
-    _callback;
+    _callback = null;
     
     constructor (data, onload){
         super("Stage");
@@ -50,17 +52,25 @@ export class StageScene extends Scene{
         const gridHelper = new THREE.GridHelper(data.side * this._squareSize, data.side, 0xffffff, 0xffffff);
         gridHelper.position.set(data.side * this._squareSize / 2, 999, data.side * this._squareSize / 2);
         //座標の調整
-        if(data.side % 2 === 0){
-            gridHelper.position.x += -50;
-            gridHelper.position.z += -50;
-        }
+        gridHelper.position.x += -50;
+        gridHelper.position.z += -50;
         this._scene.add(gridHelper);
 
-        this._loadData.push({"url" : this._urls["you"], "position" : data.start, "flag" : false});
+        this._loadData.push(this._loadDataCreate("you", data.start, this._youScale));
         for(let index in data.boxs) {
-            this._loadData.push({"url" : this._urls["box"], "position" : data.boxs[index], "flag" : false});
+            this._loadData.push(this._loadDataCreate("box", data.boxs[index]));
         }
         this._load();
+    }
+
+    _loadDataCreate (name, position, scale = new THREE.Vector3(100, 100, 100)){
+        if (!position.y) position.y = 0;
+        return {
+            "url" : this._urls[name],
+            "position" : position,
+            "scale" : scale,
+            "frag" : false
+        };
     }
 
     _load (){
@@ -69,8 +79,8 @@ export class StageScene extends Scene{
             loader.load(this._loadData[index].url,
                 (gltf) => {
                     this._moveObject[index] = gltf.scene;
-                    this._moveObject[index].scale.set(this._squareSize, this._squareSize, this._squareSize);
-                    this._moveObject[index].position.set(this._loadData[index].position.x * this._squareSize, 0, this._loadData[index].position.z * this._squareSize);
+                    this._moveObject[index].scale.copy(this._loadData[index].scale);
+                    this._moveObject[index].position.set(this._loadData[index].position.x * this._squareSize, this._loadData[index].position.y, this._loadData[index].position.z * this._squareSize);
                     this._scene.add(this._moveObject[index]);
                     this._loadData[index].flag = true;
                     this._loadComplete();
@@ -84,7 +94,11 @@ export class StageScene extends Scene{
             return val.flag;
         });
 
-        if (check) this._callback();
+        if (check) {
+            this._you = this._moveObject[0];
+            this._callback();
+            this._callback = null;
+        }
     }
 
     _wallGenerate (x, y, z){
@@ -94,6 +108,7 @@ export class StageScene extends Scene{
     }
 
     move (code, direction, distance){
+
         let x = 0;
         let z = 0;
 
@@ -120,5 +135,9 @@ export class StageScene extends Scene{
 
     get squareSize (){
         return this._squareSize;
+    }
+
+    get you (){
+        return this._you;
     }
 }
