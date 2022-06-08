@@ -107,40 +107,10 @@ export class Game{
 			}
 		}
 
-		//荷物の移動を伴う場合、荷物が移動できるか確認(いらないかもしれない)
-		let isBoxPassing = false;
-		if(ConveyBox){
-			let x = this._player.x;
-			let z = this._player.z;
-			switch(directionNum){
-				case 1:
-					x -= 2;
-					break;
-				case 2:
-					z -= 2;
-					break;
-				case 3:
-					x += 2;
-					break;
-				case 4:
-					z += 2;
-					break;
-				default:
-					throw "不適切な方向です。";
-			}
-			
-			isBoxPassing = this.checkPassing(x, z, true);
-			if(isBoxPassing){
-				console.log("\u001b[34m" + "x = " + x + "z = " + z + "に荷物通れるよ");
-			}
-		}
-
 		//荷物の移動
 		if(ConveyBox){
-			if(isBoxPassing){
-				console.log("荷物動きます");
-				this.convey(ConveyBox,directionNum);
-			}
+			console.log("荷物動きます");
+			this.convey(ConveyBox,directionNum);
 		}
 		//プレイヤーの移動
 		this.convey(this._player,directionNum);
