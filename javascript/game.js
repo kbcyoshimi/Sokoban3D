@@ -187,7 +187,22 @@ export class Game{
 				}
 			}
 		}
-		//Search関数に正規表現いるかも？
+		//ゴールチェック
+		let goals = this.searchPositions(10010);
+		let goalFlag = true;
+		for(let goal of goals){
+			let x = goal.x;
+			let z = goal.z;
+			if(!this.existsBox(x, z)){
+				goalFlag = false;
+			}else{
+				console.log("\x1b[33m" + JSON.stringify(goal) + "の上に荷物あります。")
+			}
+		}
+		//ゴール処理
+		if(goalFlag){
+			console.log("GOAL!!")
+		}
 	}
 
 	//Pieceに送る命令を振り分ける関数
@@ -349,6 +364,21 @@ export class Game{
 		return false;
 	}
 
+	//tileAと一致する座標を配列にして返す
+	searchPositions(tileA){
+		let result = [];
+		for(let z = 0; z < this._map.length; z++){
+			for(let x = 0; x < this._map[z].length; x++){
+				let tileB = this._map[z][x];
+				if(tileA === tileB){
+					let position = {"x" : x, "z" : z};
+					result.push(position);
+				}
+			}
+		}
+		console.log(result);
+		return (result ? result : false);
+	}
 
 	//tileAとIDの一致するタイルの座標を返す
 	searchPairPosition(tileA){
@@ -381,9 +411,10 @@ export class Game{
 	//指定した桁を取得する
 	extract(tile, digit){
 		let maxDigit = 5;
-		if(maxDigit < digit) throw "不適切な値です。";
+		if(maxDigit < digit){
+			throw "不適切な値です。";
+		}
 		let num = Math.floor(tile / (10 ** (digit - 1))) % 10;
-		//console.log(tile + "の" + digit + "桁目は" + num);
 		return num;
 	}
 
