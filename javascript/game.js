@@ -197,9 +197,6 @@ export class Game{
 				break;
 			//穴
 			case 8:
-				if(!isBox){
-					throw "Playerが穴にいます。";
-				}
 				this.drop(piece);
 				break;
 			default:
