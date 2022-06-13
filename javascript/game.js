@@ -1,4 +1,5 @@
 import { Piece } from "./piece";
+import { extract } from "./functions";
 
 export class Game{
 	
@@ -51,7 +52,7 @@ export class Game{
 
 			//ブロックをチェック
 			let tile = this._map[destination.z][destination.x];
-			let passing = this.extract(tile, 4);
+			let passing = extract(tile, 4);
 			if(passing !== 0){
 				isPassing = false;
 			}
@@ -178,20 +179,20 @@ export class Game{
 	pieceMove(piece){
 		let isBox = piece.code == "Box"
 		let tile = this._map[piece.z][piece.x];
-		switch(this.extract(tile, 5)){
+		switch(extract(tile, 5)){
 			//ベルトコンベアー
 			case 4:
-				let direction = this.extract(tile,3);
+				let direction = extract(tile,3);
 				this.convey(piece, direction);
 				break;
 			//テレポート
 			case 5:
 				//出口ならば処理をやめる。
-				if(this.extract(tile, 3) === 8) return;
+				if(extract(tile, 3) === 8) return;
 				if(!isBox){
 					throw "Playerがテレポートマスにいます。";
 				}
-				let teleportId = this.extract(tile, 1);
+				let teleportId = extract(tile, 1);
 				this.teleport(piece, teleportId);
 				break;
 			//穴
@@ -291,7 +292,7 @@ export class Game{
 		let x = piece.x;
 		let z = piece.z;
 		let tile = this._map[z][x];
-		let hasBox = this.extract(tile,2);
+		let hasBox = extract(tile,2);
 		if(hasBox === 1){
 			console.log("既にBOXがあります")
 			return;
@@ -351,11 +352,11 @@ export class Game{
 
 	//tileAとIDの一致するタイルの座標を返す
 	searchPairPosition(tileA){
-		let idA = this.extract(tileA, 1);
+		let idA = extract(tileA, 1);
 		for(let z = 0; z < this._map.length; z++){
 			for(let x = 0; x < this._map.length; x++){
 				let tileB = this._map[z][x];
-				let idB = this.extract(tileB, 1);
+				let idB = extract(tileB, 1);
 				if(idA === idB){
 					console.log("ペアのタイルの座標を見つけました。");
 					let result = {"x" : x, "z" : z};
@@ -377,22 +378,12 @@ export class Game{
 		return false;
 	}
 
-	//指定した桁を取得する
-	extract(tile, digit){
-		const maxDigit = 5;
-		if(maxDigit < digit){
-			throw "不適切な値です。";
-		}
-		let num = Math.floor(tile / (10 ** (digit - 1))) % 10;
-		return num;
-	}
-
 	//x,zが通行可能かを確認　可能ならTrueを返す。
 	//対象が追うレイヤーではなく荷物ならisBox引数にTrueを挿入する。
 	checkPassing(x, z, isBox = false){
 		//ブロックをチェック
 		let tile = this._map[z][x];
-		let passing = this.extract(tile, 4);
+		let passing = extract(tile, 4);
 		if(passing !== 0){
 			if(!(passing === 2 && isBox)){
 				console.log(passing);
