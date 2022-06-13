@@ -121,8 +121,8 @@ export class Game{
 	//ターンエンド時
 	turnend(){
 		//荷物
-		for(let box in this._boxs){
-			this.pieceMove(box)
+		for(let box of this._boxs){
+			this.pieceMove(box);
 		}
 		//プレイヤー
 		this.pieceMove(this._player);
