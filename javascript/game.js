@@ -227,6 +227,12 @@ export class Game{
 				break;
 		}
 
+		//移動できるか確認
+		if(!this.checkPassing(destinationX, destinationZ, piece.code == "Box")){
+			console.log("コンベアの先に障害物があります。");
+			return;
+		} 
+
 		//対象物を移動させる
 		console.log("\u001b[32m" + JSON.stringify(piece) + "から");
 		piece.move(destinationX, destinationZ);
