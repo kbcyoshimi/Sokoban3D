@@ -58,11 +58,13 @@ export class Game{
 			}
 			//荷物をチェック
 			for(const box of this._boxs){
-				if(box.comparePosition(destination.x, destination.z)){
-					let boxDestination = result[direction].boxDestination;
-					if(!this.checkPassing(boxDestination.x, boxDestination.z, true)){
-						//console.log(direction + "に荷物はありますが運ぶことは出来ません。")
-						isPassing = false;
+				if(!box._isDrop){
+					if(box.comparePosition(destination.x, destination.z)){
+						let boxDestination = result[direction].boxDestination;
+						if(!this.checkPassing(boxDestination.x, boxDestination.z, true)){
+							//console.log(direction + "に荷物はありますが運ぶことは出来ません。")
+							isPassing = false;
+						}
 					}
 				}
 			}
@@ -101,6 +103,9 @@ export class Game{
 		let ConveyBox = null;
 		let playerDestination = way.position;
 		for(const box of this._boxs){
+			if(box._isDrop){
+				continue;
+			}
 			let isSame = box.comparePosition(playerDestination.x, playerDestination.z);
 			if(isSame){
 				console.log("Playerの行先にBoxがあります")
@@ -123,7 +128,9 @@ export class Game{
 	turnend(){
 		//荷物
 		for(let box of this._boxs){
-			this.pieceMove(box);
+			if(!box._isDrop){
+				this.pieceMove(box);
+			}
 		}
 		//プレイヤー
 		this.pieceMove(this._player);
@@ -304,9 +311,10 @@ export class Game{
 		this._map[z][x] -= 2010;
 
 		//対象の荷物を削除
-		this._boxs = this._boxs.filter(function(box) {
-			return box !== piece;
-		});
+		// this._boxs = this._boxs.filter(function(box) {
+		// 	return box !== piece;
+		// });
+		piece.drop();
 		console.log("穴に箱が落ちました。")
 	}
 
@@ -374,8 +382,10 @@ export class Game{
 	existsBox(x, z){
 		for(const box of this._boxs){
 			if(box.comparePosition(x, z)){
-				console.log("x = " + x + " z = " + z + " に荷物があります。")
-				return true;
+				if(!box._isDrop){
+					console.log("x = " + x + " z = " + z + " に荷物があります。")
+					return true;
+				}
 			}
 		}
 		return false;
@@ -396,7 +406,9 @@ export class Game{
 		//荷物をチェック
 		for(const box of this._boxs){
 			if(box.comparePosition(x, z)){
-				return false;
+				if(!box._isDrop){
+					return false;
+				}
 			}
 		}
 		//プレイヤーをチェック

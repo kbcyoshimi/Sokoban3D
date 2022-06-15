@@ -3,11 +3,13 @@ export class Piece{
 	_z;
 	//playerかboxか
 	_code;
+	_isDrop;
 
 	constructor (x, z, code){
 		this._x = x;
 		this._z = z;
 		this._code = code;
+		this._isDrop = false;
 	}
 
 	get x (){
@@ -26,6 +28,14 @@ export class Piece{
 	move (x, z){
 		this._x = x;
 		this._z = z;
+	}
+
+	//穴に落ちる
+	drop (){
+		if(this._code == "Player"){
+			throw "Playerが穴に落ちようとしています。";
+		}
+		this._isDrop = true;
 	}
 
 	checkPassing (x, z, map){
