@@ -5,6 +5,9 @@ import { Game } from "./game";
 import { StageScene } from "./scenes/stage-scene";
 import { TitleScene } from "./scenes/title-scene";
 
+//正方形の1辺の長さ
+const SIDE = 100;
+
 export class CanvasManager{
     
     _world;
@@ -72,6 +75,8 @@ export class CanvasManager{
                 break;
             case "r" :
                 this._stageRestart();
+                //テスト用(1)
+                this._world.textureToggle();
                 break;
             case "z" :
                 this._turnBack();
@@ -82,21 +87,24 @@ export class CanvasManager{
     }
 
     //ステージの初期処理
-    _stageStart (){
+    _stageStart (data){
+
+        this._main.startStageMode(data);
+        this._map.startStageMode(data);
+        this._manual.startStageMode(data);
+
         this._way = this._game.moveCheck();
         this._waiting = false;
     }
 
     _turnMove (direction){
         if (this._way[direction]["isPassing"]) {
-            //仮コードここから
-            this._test.start = this._way[direction]["position"];
-            this._game = new Game(this._test);
-            //仮コードここまで
+
+            this._game.move(direction);
 
             this._animetionRequest = {
                 "startTime" : performance.now(),
-                "distance" : this._world.squareSize,
+                "distance" : SIDE,
                 "totalTime" : 100,
                 "target" : [
                     {
@@ -191,14 +199,10 @@ export class CanvasManager{
         xhr.onload = () => {
             data = JSON.parse(xhr.response);
             this._game = new Game(data);
-            this._world = new StageScene(data, () => {
-                this._main.startStageMode(data);
-                this._map.startStageMode(data);
-                this._manual.startStageMode(data);
-                this._stageStart();
+            this._world = new StageScene(data);
+            this._world.load(() => {
+                this._stageStart(data);
             });
-
-            this._test = data;
         }
         xhr.send();
         this._waiting = true;

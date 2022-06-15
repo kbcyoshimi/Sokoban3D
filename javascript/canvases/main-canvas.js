@@ -3,9 +3,9 @@ import { FirstPersonControls } from "../modules/FirstPersonControls.js";
 import { Canvas } from "./canvas";
 
 //円の半径
-const RADIUS = 30;
-//正方形の直径
-const DIAMETER = 100;
+const RADIUS = 5;
+//正方形の1辺の長さ
+const SIDE = 100;
 const DIRECTION = [null, 270, 180, 90, 0];
 
 //度をラジアンに変換する関数
@@ -31,7 +31,7 @@ export class MainCanvas extends Canvas{
 
 	constructor (){
     	super('#mainCanvas');
-		this._camera = new THREE.PerspectiveCamera(60, this._canvas.clientWidth / this._canvas.clientHeight);
+		this._camera = new THREE.PerspectiveCamera(90, this._canvas.clientWidth / this._canvas.clientHeight);
   	}
 
 	moveCamera (direction, distance){
@@ -51,19 +51,19 @@ export class MainCanvas extends Canvas{
 		this._controls.lookVertical = false;
 
 		//カメラの基準座標を設定
-		this._basisPosition.x = data.start.x * DIAMETER;
-		this._basisPosition.z = data.start.z * DIAMETER;
+		this._basisPosition.x = data.start.x * SIDE;
+		this._basisPosition.z = data.start.z * SIDE;
 
-		let x = this._basisPosition.x;
-		let z = this._basisPosition.z;
+		let x = this._basisPosition.x,
+			z = this._basisPosition.z;
 
 		//向きから補正座標を計算する
-		let rad = degToRad(DIRECTION[data.dir]);
-		let xd = RADIUS * Math.sin(rad);
-		let zd = RADIUS * Math.cos(rad);	
+		let rad = degToRad(DIRECTION[data.dir]),
+			xd = RADIUS * Math.sin(rad),
+			zd = RADIUS * Math.cos(rad);	
 
-		let phi = degToRad(90);
-		let theta = rad;
+		let phi = degToRad(90),
+			theta = rad;
 		this._theta = rad;
 
 		//座標の反映
@@ -72,9 +72,10 @@ export class MainCanvas extends Canvas{
 		let dir = new THREE.Vector3();
 
 		//カメラの向きをコントロールに伝える
-		dir.setFromSphericalCoords( 1, phi, theta).add(position);
+		dir.setFromSphericalCoords(1, phi, theta).add(position);
 		this._controls.lookAt(dir);
 
+		//カメラの向きを取得しておく
 		this._last = this._camera.rotation.y;
 
 		//イベントの登録
@@ -105,18 +106,24 @@ export class MainCanvas extends Canvas{
 		if (this._move && this._mode === "Stage") {
 			this._controls.update(1);
 
-			//カメラの角度の変化を取得（Y軸基準）
+			//カメラの向きの変化を取得（Y軸基準）
 			let diff = Math.abs(this._camera.rotation.y - this._last);
 			//変化の方向に応じて角度を加減算する
 			this._mouseX < 0 ? this._theta += diff : this._theta -= diff;
+			//角度を0~360の範囲で維持する
+			let deg360 = degToRad(360);
+			if (this._theta < 0) this._theta += deg360;
+			if (this._theta > deg360) this._theta -= deg360;
 			//１つ前の角度を保持
 			this._last = this._camera.rotation.y;
 
+			console.log(THREE.MathUtils.radToDeg(this._theta));
+
 			//座標の計算
-			let x = this._basisPosition.x;
-			let z = this._basisPosition.z;
-			let xd = RADIUS * Math.sin(this._theta);
-			let zd = RADIUS * Math.cos(this._theta);
+			let x = this._basisPosition.x,
+				z = this._basisPosition.z,
+				xd = RADIUS * Math.sin(this._theta),
+				zd = RADIUS * Math.cos(this._theta);
 
 			//座標の反映
 			this._camera.position.x = x + xd;
