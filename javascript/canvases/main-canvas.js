@@ -3,7 +3,7 @@ import { FirstPersonControls } from "../modules/FirstPersonControls.js";
 import { Canvas } from "./canvas";
 
 //円の半径
-const RADIUS = 30;
+const RADIUS = 5;
 //正方形の1辺の長さ
 const SIDE = 100;
 const DIRECTION = [null, 270, 180, 90, 0];
@@ -31,7 +31,7 @@ export class MainCanvas extends Canvas{
 
 	constructor (){
     	super('#mainCanvas');
-		this._camera = new THREE.PerspectiveCamera(60, this._canvas.clientWidth / this._canvas.clientHeight);
+		this._camera = new THREE.PerspectiveCamera(90, this._canvas.clientWidth / this._canvas.clientHeight);
   	}
 
 	moveCamera (direction, distance){
@@ -110,8 +110,14 @@ export class MainCanvas extends Canvas{
 			let diff = Math.abs(this._camera.rotation.y - this._last);
 			//変化の方向に応じて角度を加減算する
 			this._mouseX < 0 ? this._theta += diff : this._theta -= diff;
+			//角度を0~360の範囲で維持する
+			let deg360 = degToRad(360);
+			if (this._theta < 0) this._theta += deg360;
+			if (this._theta > deg360) this._theta -= deg360;
 			//１つ前の角度を保持
 			this._last = this._camera.rotation.y;
+
+			console.log(THREE.MathUtils.radToDeg(this._theta));
 
 			//座標の計算
 			let x = this._basisPosition.x,

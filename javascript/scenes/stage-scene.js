@@ -37,6 +37,10 @@ const TUNNEL_ROOF = {
 //プレイヤーオブジェクトの調整用データ
 const YOU_SCALE = new THREE.Vector3(100, 90, 100);
 
+//最上層(グリッドヘルパー用)と上層(プレイヤーオブジェクトと屋根用)のy座標
+const TOP_LAYER = 999;
+const UPPER_LAYER = 900;
+
 export class StageScene extends Scene{
 
     _loadData = {
@@ -101,9 +105,27 @@ export class StageScene extends Scene{
 
     //トンネルのデータを作成し、保持する
     _tunnelGenerate (x, z){
-        let roof = new THREE.Mesh(TUNNEL_ROOF.geo(), TUNNEL_ROOF.mat());
-        roof.position.set(x, SIDE / 2 - ROOF_H / 2, z);
-        this._backgroundObject.wall.push(roof);
+        let roof = new THREE.Mesh(TUNNEL_ROOF.geo(), TUNNEL_ROOF.mat()),
+            aboveRoof = null,
+            belowRoof = null;
+
+        //y座標の定義
+        let roofY = SIDE / 2 - ROOF_H / 2;
+        let [above, below] = [UPPER_LAYER + roofY, roofY];
+
+        roof.position.x = x;
+        roof.position.z = z;
+
+        //共通部分のコピー
+        aboveRoof = roof.clone();
+        belowRoof = roof.clone();
+
+        //それぞれにy座標を代入
+        aboveRoof.position.y = above;
+        belowRoof.position.y = below
+      
+        this._backgroundObject.wall.push(aboveRoof);
+        this._backgroundObject.wall.push(belowRoof);
     }
 
     //壁や床にテクスチャを適用する
@@ -140,7 +162,7 @@ export class StageScene extends Scene{
             belowGridHelper = null;
         
         //y座標の定義
-        let [above, below] = [999, -SIDE / 2];
+        let [above, below] = [TOP_LAYER, -SIDE / 2];
 
         //座標の計算
         let middle = side * SIDE / 2 - SIDE / 2;
@@ -166,6 +188,8 @@ export class StageScene extends Scene{
         let x = position.x * SIDE,
             z = position.z * SIDE;
         let vector = new THREE.Vector3(x, 0, z);
+
+        if (name === "you") vector.y = UPPER_LAYER;
 
         //読み込むデータの情報をモデルの配列にプッシュ
         this._loadData.model.push({
