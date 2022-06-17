@@ -8,14 +8,25 @@ export class Game{
 	_boxs;
 	_map;
 
+	//[ターン][number]
+	_histories;
+
+	_history;
+
+	_turn;
+
 	constructor (data){
 		this._orgData = JSON.parse(JSON.stringify(data));
-		this._player = new Piece(data.start.x, data.start.z, "Player");
+		this._player = new Piece(data.start.x, data.start.z, "Player", 0);
 		this._boxs = [];
 		for(let i = 0; i < data.boxs.length; i++){
-			this._boxs[i] = new Piece(data.boxs[i].x, data.boxs[i].z, "Box");
+			this._boxs[i] = new Piece(data.boxs[i].x, data.boxs[i].z, "Box", (i + 1));
 		}
 		this._map = Array.from(data.map);
+
+		this._histories = new Array();
+		this._history = null;
+		this._turn = 1;
 	}
 
 	//プレイヤーがどの方向に動けるかチェック
@@ -75,6 +86,11 @@ export class Game{
 
 	//プレイヤー移動処理
 	move(direction){
+		//history 初期化
+		this._history = new Array();
+		for(let i = 0; i < this._boxs.length + 1; i++){
+			this._history[i] = new Array();
+		}
 		//プレイヤーが移動できるか確認
 		let ways = this.moveCheck();
 		let way = ways[direction];
@@ -122,6 +138,13 @@ export class Game{
 		//プレイヤーの移動
 		this.convey(this._player,directionNum);
 		this.turnend();
+
+		//移動情報を返す
+		this._histories[this._turn];
+		console.log((this._turn) + "ターン目終了");
+		this._turn ++;
+		console.log(this._history);
+		return this._history;
 	}
 
 	//ターンエンド時
@@ -244,6 +267,8 @@ export class Game{
 		console.log("\u001b[32m" + JSON.stringify(piece) + "から");
 		piece.move(destinationX, destinationZ);
 		console.log("\u001b[32m" + JSON.stringify(piece) + "へ移動しました。");
+
+		this.generateHistoryD("move", destinationX, destinationZ, piece.number)
 	}
 
 	//pieceにテレポートの命令を送る関数
@@ -264,6 +289,8 @@ export class Game{
 		console.log("\x1b[31m" + JSON.stringify(piece) + "から");
 		piece.move(destinationX, destinationZ);
 		console.log("\x1b[31m" + JSON.stringify(piece) + "へテレポートしました。");
+
+		this.generateHistoryD("teleport", destinationX, destinationZ, piece.number);
 		return;
 	}
 
@@ -417,6 +444,19 @@ export class Game{
 		}
 		//console.log("x = " + x + " z = " + z + " は通行可能です。")
 		return true;
+	}
+
+	//履歴に移動情報を追加する関数
+	generateHistoryD(key, x, z, number){
+		let template = {
+			"key" : key,
+			"destination" : {
+				"x" : x,
+				"z" : z
+			}
+		};
+
+		this._history[number].push(template);
 	}
 
 	//コンソール表示
