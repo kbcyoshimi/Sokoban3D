@@ -8,6 +8,8 @@ export class Game{
 	_boxs;
 	_map;
 
+	_mapLength;
+
 	//[ターン][number]
 	_histories;
 
@@ -23,6 +25,12 @@ export class Game{
 			this._boxs[i] = new Piece(data.boxs[i].x, data.boxs[i].z, "Box", (i + 1));
 		}
 		this._map = Array.from(data.map);
+
+		//正方形チェック
+		if(this._map.length !== this._map[0].length){
+			throw "ステージが正方形ではありません。";
+		}
+		this._mapLength = this._map.length;
 
 		this._histories = new Array();
 		this._history = null;
@@ -62,7 +70,7 @@ export class Game{
 			let isPassing = true;
 
 			//ブロックをチェック
-			let tile = this._map[destination.z][destination.x];
+			let tile = this.getTile(destination.x, destination.z);
 			let passing = extract(tile, 4);
 			if(passing !== 0){
 				isPassing = false;
@@ -208,7 +216,7 @@ export class Game{
 	//pieceに送る命令を振り分ける関数
 	pieceMove(piece){
 		let isBox = piece.code == "Box"
-		let tile = this._map[piece.z][piece.x];
+		let tile = this.getTile(piece.x, piece.z);
 		switch(extract(tile, 5)){
 			//ベルトコンベアー
 			case 4:
@@ -297,12 +305,13 @@ export class Game{
 	//x,zのスイッチ操作
 	switchON(x, z){
 		//対象のドアを探す。
-		let tile = this._map[z][x];
+		let tile = this.getTile(x, z);
 		let pairPosition = this.searchPairPosition(tile);
 		if(pairPosition){
 			this.openDoor(pairPosition.x, pairPosition.z)
 			const pushSwitchNum = 10;
-			this._map[z][x] -= pushSwitchNum;
+			let changedTile = tile - pushSwitchNum;
+			this.changeTile(x, z, changedTile)
 			console.log("open door");
 			return;
 		}
@@ -312,12 +321,13 @@ export class Game{
 	//x,zのスイッチの状態をOFFに
 	switchOFF(x, z){
 		//対象のドアを探す。
-		let tile = this._map[z][x];
+		let tile = this.getTile(x, z);
 		let pairPosition = this.searchPairPosition(tile);
 		if(pairPosition){
 			this.closeDoor(pairPosition.x, pairPosition.z)
 			const pullSwitchNum = 10;
-			this._map[z][x] += pullSwitchNum;
+			let changedTile = tile + pullSwitchNum;
+			this.changeTile(x, z, changedTile);
 			console.log("close door");
 			return;
 		}
@@ -328,14 +338,16 @@ export class Game{
 	drop(piece){
 		let x = piece.x;
 		let z = piece.z;
-		let tile = this._map[z][x];
+		let tile = this.getTile(x, z);
 		let hasBox = extract(tile,2);
 		if(hasBox === 1){
 			console.log("既にBOXがあります")
 			return;
 		}
 		//対象のタイルを変更
-		this._map[z][x] -= 2010;
+		const dropNum = 2010;
+		let changedTile = tile - dropNum;
+		this.changeTile(x, z, changedTile);
 
 		//対象の荷物を削除
 		// this._boxs = this._boxs.filter(function(box) {
@@ -347,20 +359,26 @@ export class Game{
 
 	//x,zのドアを開ける関数
 	openDoor(x, z){
-		this._map[z][x] -= 1010;
+		const openDoorNum = -1010;
+		let tile = this.getTile(x, z);
+		let changedTile = tile + openDoorNum;
+		this.changeTile(x, z, changedTile);
 	}
 
 	//x,zのドアを閉める関数
 	closeDoor(x, z){
-		this._map[z][x] += 1010;
+		const closeDoorNum = 1010;
+		let tile = this.getTile(x, z);
+		let changedTile = tile + closeDoorNum;
+		this.changeTile(x, z, changedTile);
 	}
 
 	//tileAと一致する座標を返す
 	searchPosition(tileA){
 		let result = false;
-		for(let z = 0; z < this._map.length; z++){
-			for(let x = 0; x < this._map[z].length; x++){
-				let tileB = this._map[z][x];
+		for(let z = 0; z < this._mapLength; z++){
+			for(let x = 0; x < this._mapLength; x++){
+				let tileB = this.getTile(x, z);
 				if(tileA === tileB){
 					if(result){
 						throw "一致する座標が複数見つかりました。";
@@ -375,9 +393,9 @@ export class Game{
 	//tileAと一致する座標を配列にして返す
 	searchPositions(tileA){
 		let result = [];
-		for(let z = 0; z < this._map.length; z++){
-			for(let x = 0; x < this._map[z].length; x++){
-				let tileB = this._map[z][x];
+		for(let z = 0; z < this._mapLength; z++){
+			for(let x = 0; x < this._mapLength; x++){
+				let tileB = this.getTile(x, z);
 				if(tileA === tileB){
 					let position = {"x" : x, "z" : z};
 					result.push(position);
@@ -391,9 +409,9 @@ export class Game{
 	//tileAとIDの一致するタイルの座標を返す
 	searchPairPosition(tileA){
 		let idA = extract(tileA, 1);
-		for(let z = 0; z < this._map.length; z++){
-			for(let x = 0; x < this._map.length; x++){
-				let tileB = this._map[z][x];
+		for(let z = 0; z < this._mapLength; z++){
+			for(let x = 0; x < this._mapLength; x++){
+				let tileB = this.getTile(x, z);
 				let idB = extract(tileB, 1);
 				if(idA === idB){
 					console.log("ペアのタイルの座標を見つけました。");
@@ -418,11 +436,22 @@ export class Game{
 		return false;
 	}
 
+	//x,zのタイルをvalueに変更する
+	changeTile(x, z, value){
+		this._map[z][x] = value;
+	}
+
+	//x,zのタイルを取得する
+	getTile(x, z){
+		let result = this._map[z][x];
+		return result;
+	}
+
 	//x,zが通行可能かを確認　可能ならTrueを返す。
 	//対象が追うレイヤーではなく荷物ならisBox引数にTrueを挿入する。
 	checkPassing(x, z, isBox = false){
 		//ブロックをチェック
-		let tile = this._map[z][x];
+		let tile = this.getTile(x, z);
 		let passing = extract(tile, 4);
 		if(passing !== 0){
 			if(!(passing === 2 && isBox)){
