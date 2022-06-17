@@ -3,13 +3,16 @@ export class Piece{
 	_z;
 	//playerかboxか
 	_code;
-	_isDrop;
 
-	constructor (x, z, code){
+	_isDrop;
+	_number;
+
+	constructor (x, z, code, number){
 		this._x = x;
 		this._z = z;
 		this._code = code;
 		this._isDrop = false;
+		this._number = number;
 	}
 
 	get x (){
@@ -22,6 +25,10 @@ export class Piece{
 
 	get code (){
 		return this._code;
+	}
+
+	get number (){
+		return this._number;
 	}
 
 	//指定した座標に移動
