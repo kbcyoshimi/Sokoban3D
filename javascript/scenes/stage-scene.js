@@ -8,7 +8,8 @@ const SIDE = 100;
 //3Dモデルのurl
 const MODEL_URLs = {
     "you" : "model/you.glb",
-    "box" : "model/box.glb"
+    "box" : "model/box.glb",
+    "hole" : "model/hole.glb"
 }
 
 //テクスチャのurl
@@ -20,6 +21,17 @@ const TEXTURE_URLs = {
         "grass" : "img/grass.jpg"
     }
 }
+
+//マップのデータに対応した数値
+const FLOOR_N = 1;
+const WALL_N = 2;
+const TUNNEL_N = 3;
+const CONVEYOR_N = 4;
+const TELEPORT_N = 5;
+const SWITCH_N = 6;
+const SENSOR_N = 7;
+const HOLE_N = 8;
+const DOOR_N = 9;
 
 //ブロックオブジェクトのデータ(壁、床用)
 const BLOCK = {
@@ -41,6 +53,9 @@ const YOU_SCALE = new THREE.Vector3(100, 90, 100);
 const TOP_LAYER = 999;
 const UPPER_LAYER = 900;
 
+//オブジェクトのプロパティ名
+const POSITION = "position";
+
 export class StageScene extends Scene{
 
     _loadData = {
@@ -58,20 +73,34 @@ export class StageScene extends Scene{
     constructor (data){
         super("Stage");
 
+        //マップデータを使用してオブジェクトの生成や読み込みを行う
         for(var z = 0; z < data.map.length; z++) {
             for(var x = 0; x < data.map[z].length; x++) {
                 switch(Math.floor(data.map[z][x] / 10000)){
-                    case 1:
+                    case FLOOR_N:
                         this._floorGenerate(x * SIDE, z * SIDE);
                         break;
-                    case 2:
+                    case WALL_N:
                         this._wallGenerate(x * SIDE, z * SIDE);
                         break;
-                    case 3:
+                    case TUNNEL_N:
                         this._tunnelGenerate(x * SIDE, z * SIDE);
                         this._floorGenerate(x * SIDE, z * SIDE);
                         break;
+                    case CONVEYOR_N:
+                        break;
+                    case TELEPORT_N:
+                        break;
+                    case SWITCH_N:
+                        break;
+                    case SENSOR_N:
+                        break;
+                    case HOLE_N:
+                        break;
+                    case DOOR_N:
+                        break;
                     default:
+                        console.error("謎オブジェ");
                 } 
             } 
         }
@@ -190,6 +219,7 @@ export class StageScene extends Scene{
         let vector = new THREE.Vector3(x, 0, z);
 
         if (name === "you") vector.y = UPPER_LAYER;
+        if (name === "hole") vector.y = -SIDE;
 
         //読み込むデータの情報をモデルの配列にプッシュ
         this._loadData.model.push({
@@ -256,6 +286,7 @@ export class StageScene extends Scene{
         }
     }
 
+    //モデルやテクスチャの読み込み完了を確認する
     _loadComplete (callback){
         let check = (val) => {
             return val.flag;
@@ -269,30 +300,35 @@ export class StageScene extends Scene{
         }
     }
 
-    move (code, direction, distance){
+    //対応するオブジェクトに受け取ったデータを適用する
+    move (code, data){
+        if (data === null) return;
 
-        let x = 0,
-            z = 0;
+        //キーと対応する値を取得する
+        let propertys = data.propertys,
+            values = data.values;
+        
+        //キーと値の数が一致しないときに警告
+        if (propertys.length !== values.length) console.warn("キーと値の数が一致していません。");
+        let length = Math.min(propertys.length, values.length);
 
-        switch (direction){
-            case "left" :
-                x = -distance;
-                break;
-            case "up" :
-                z = -distance;
-                break;
-            case "right" :
-                x = distance;
-                break;
-            case "down" :
-                z = distance;
-                break;
-            default:
-                break;
+        //キーに応じた代入方法で値を適用する
+        for (let i = 0; i < length; i++){
+            let property = propertys[i];
+            switch (property){
+                case POSITION:
+                    this._moveObject[code][property].x = values[i].x;
+                    this._moveObject[code][property].z = values[i].z;
+                default:
+            }
         }
+    }
 
-        this._moveObject[code].position.x += x;
-        this._moveObject[code].position.z += z;
+    getPosition (code){
+        let x = this._moveObject[code].position.x,
+            z = this._moveObject[code].position.z;
+
+        return {"x" : x, "z" : z};
     }
 
     get you (){

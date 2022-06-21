@@ -1,3 +1,4 @@
+import { Animation } from "./animetion/animetion";
 import { MainCanvas } from "./canvases/main-canvas";
 import { ManualCanvas } from "./canvases/manual-Canvas";
 import { MapCanvas } from "./canvases/map-canvas";
@@ -100,20 +101,11 @@ export class CanvasManager{
     _turnMove (direction){
         if (this._way[direction]["isPassing"]) {
 
-            this._game.move(direction);
+            let target = this._game.move(direction);
+            let tell = this._world.getPosition.bind(this._world);
 
-            this._animetionRequest = {
-                "startTime" : performance.now(),
-                "distance" : SIDE,
-                "totalTime" : 100,
-                "target" : [
-                    {
-                        "code" : 0,
-                        "progress" : 0,
-                        "direction" : direction
-                    }
-                ]
-            }
+            this._animetionRequest = new Animation(target, tell);
+            this._animetionRequest.init();
 
             this._waiting = true;
 
@@ -140,36 +132,31 @@ export class CanvasManager{
     }
 
     _animetion (){
-        //アニメーション要求がなければreturn
-        if (this._animetionRequest === null) return;
 
-        //経過時間をミリ秒で取得
-        let timeProgress = performance.now() - this._animetionRequest.startTime;
-        
-        if (timeProgress >= this._animetionRequest.totalTime) {
-            //アニメーション終了時の処理
-            //誤差の修正
-            for (let index in this._animetionRequest.target) {
-                let measurementError = this._animetionRequest.distance - this._animetionRequest.target[index].progress;
-                this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, measurementError);
-                if (this._animetionRequest.target[index].code === 0) this._main.moveCamera(this._animetionRequest.target[index].direction, measurementError);
+        let req = this._animetionRequest;
+        //アニメーション要求がなければreturn
+        if (req === null) return;
+        if (!req.isReady()) return;
+
+        req.update();
+
+        if (req.isWrapEnd()){
+            for (let i = 0; i < req.getLength(); i++){
+                let data = req.wrapLast(i);
+                this._world.move(i, data);
+                if (i === 0 && data !== null) this._main.setCamera(data.values[0]);
             }
-            //要求の削除
-            this._animetionRequest = null;
-            //待ち状態の解除
-            this._waiting = false;
+            if (req.isNext()){
+                req.next();
+            }else {
+                this._animetionRequest = null;
+                this._waiting = false;
+            }
         }else {
-            //アニメーション処理
-            //進捗を割合で取得
-            let progress = timeProgress / this._animetionRequest.totalTime;
-            //全ての対象オブジェクトにフレームごとの移動距離を計算し動かす
-            for (let index in this._animetionRequest.target) {
-                //進捗を移動距離に変換する
-                let valueProgress = this._animetionRequest.distance * progress;
-                let distance = valueProgress - this._animetionRequest.target[index].progress;
-                this._animetionRequest.target[index].progress = valueProgress;
-                this._world.move(this._animetionRequest.target[index].code, this._animetionRequest.target[index].direction, distance);
-                if (this._animetionRequest.target[index].code === 0) this._main.moveCamera(this._animetionRequest.target[index].direction, distance); 
+            for (let i = 0; i < req.getLength(); i++){
+                let data = req.distanceCalc(i);
+                this._world.move(i, data);
+                if (i === 0 && data !== null) this._main.setCamera(data.values[0]);
             }
         }
     }

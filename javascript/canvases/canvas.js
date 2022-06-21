@@ -19,8 +19,8 @@ export class Canvas{
 		this._renderer.setSize(this._canvas.clientWidth, this._canvas.clientHeight);
     }
 
-    setCamera (x, y, z){
-        this._camera.position.set(x, y, z);
+    setCamera (vector){
+        this._camera.position.copy(vector);
     }
 
     moveCamera(direction, distance){
