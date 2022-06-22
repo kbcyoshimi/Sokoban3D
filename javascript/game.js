@@ -281,7 +281,7 @@ export class Game{
 
 	//pieceにテレポートの命令を送る関数
 	teleport(piece, teleportId){
-		const teleportTile = 52810
+		const teleportTile = 50810
 		let tile = teleportTile + teleportId;
 		let position = this.searchPosition(tile);
 		console.log("teleport" + JSON.stringify(position))
