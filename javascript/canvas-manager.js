@@ -102,6 +102,7 @@ export class CanvasManager{
         if (this._way[direction]["isPassing"]) {
 
             let target = this._game.move(direction);
+            target = JSON.parse(JSON.stringify(target));
             let tell = this._world.getPosition.bind(this._world);
 
             this._animetionRequest = new Animation(target, tell);
@@ -120,7 +121,8 @@ export class CanvasManager{
     }
 
     _turnBack (){
-
+        this._game.back();
+        this._way = this._game.moveCheck();
     }
 
     _stageRestart (){

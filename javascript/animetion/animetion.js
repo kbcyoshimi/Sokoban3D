@@ -10,6 +10,9 @@ const REQUIERD_TIME = 100;
 const MOVE = "move";
 const MOVE_PROPERTYS = ["position"];
 
+const TELEPORT = "teleport";
+const TELEPORT_PROPERTYS = ["position"];
+
 export class Animation{
 
     //アニメーション開始時間
@@ -41,6 +44,7 @@ export class Animation{
                 let data = this._target[i][j];
                 switch (data.key) {
                     case MOVE :
+                    case TELEPORT :
                         this._moveInit(data, i, j);
                         break;
                     default :
@@ -108,6 +112,7 @@ export class Animation{
 
         switch (data.key){
             case MOVE :
+            case TELEPORT :
                 result = this._moveCalc(data);
                 break;
             default :
@@ -143,6 +148,7 @@ export class Animation{
 
         switch (data.key){
             case MOVE :
+            case TELEPORT :
                 result = this._moveLast(data);
                 break;
             default :
