@@ -10,10 +10,11 @@ export class Game{
 
 	_mapLength;
 
-	//[ターン][number]
-	_histories;
-
-	_history;
+	_animation;
+	//[turn]
+	_mapHistories;
+	//piece
+	_pieceHistories;
 
 	_turn;
 
@@ -32,8 +33,13 @@ export class Game{
 		}
 		this._mapLength = this._map.length;
 
-		this._histories = new Array();
-		this._history = null;
+		this._animation = null;
+
+		this._mapHistories = new Array();
+		this._mapHistories[0] = Array.from(this._map);
+
+		this._pieceHistories = new Array();
+
 		this._turn = 1;
 	}
 
@@ -94,10 +100,10 @@ export class Game{
 
 	//プレイヤー移動処理
 	move(direction){
-		//history 初期化
-		this._history = new Array();
+		//animation 初期化
+		this._animation = new Array();
 		for(let i = 0; i < this._boxs.length + 1; i++){
-			this._history[i] = new Array();
+			this._animation[i] = new Array();
 		}
 		//プレイヤーが移動できるか確認
 		let ways = this.moveCheck();
@@ -147,12 +153,17 @@ export class Game{
 		this.convey(this._player,directionNum);
 		this.turnend();
 
+		//mapの状態を記録
+		this._mapHistories[this._turn] = Array.from(this._map);
+		console.log(this._mapHistories);
+
+		//pieceの座標を保存
+		this.generatePiecePositions();
+
 		//移動情報を返す
-		this._histories[this._turn];
 		console.log((this._turn) + "ターン目終了");
 		this._turn ++;
-		console.log(this._history);
-		return this._history;
+		return this._animation;
 	}
 
 	//ターンエンド時
@@ -276,7 +287,7 @@ export class Game{
 		piece.move(destinationX, destinationZ);
 		console.log("\u001b[32m" + JSON.stringify(piece) + "へ移動しました。");
 
-		this.generateHistoryD("move", destinationX, destinationZ, piece.number)
+		this.generateAnimationD("move", destinationX, destinationZ, piece.number)
 	}
 
 	//pieceにテレポートの命令を送る関数
@@ -298,7 +309,7 @@ export class Game{
 		piece.move(destinationX, destinationZ);
 		console.log("\x1b[31m" + JSON.stringify(piece) + "へテレポートしました。");
 
-		this.generateHistoryD("teleport", destinationX, destinationZ, piece.number);
+		this.generateAnimationD("teleport", destinationX, destinationZ, piece.number);
 		return;
 	}
 
@@ -476,7 +487,7 @@ export class Game{
 	}
 
 	//履歴に移動情報を追加する関数
-	generateHistoryD(key, x, z, number){
+	generateAnimationD(key, x, z, number){
 		let template = {
 			"key" : key,
 			"destination" : {
@@ -485,8 +496,56 @@ export class Game{
 			}
 		};
 
-		this._history[number].push(template);
+		this._animation[number].push(template);
 	}
+
+
+	//履歴にpiece達の座標情報を追加する関数
+	generatePiecePositions(){
+		let result = {
+			"player" : {
+				"x" : this._player.x,
+				"z" : this._player.z
+			},
+			"boxs" : []
+		}
+
+		for(const box of this._boxs){
+			let tmp = {
+				"x" : box.x,
+				"z" : box.z
+			}
+			result.boxs.push(tmp);
+		}
+		this._pieceHistories[this._turn] = result;
+	}
+
+	//手戻り操作
+	//指定turnの"開始前"の状態に戻る（終了後ではなく開始前）
+	back(turn = this._turn - 1){
+		if(turn < 0){
+			throw "turnの値が不適切です。"
+		}
+		let mapHistory = this._mapHistories[turn];
+
+		//mapの手戻り
+		this._map = Array.from(mapHistory);
+
+		//pieceの手戻り
+		let piecePositions = this._pieceHistories;
+		let player = this._player;
+		player.move(piecePositions[turn]['player'].x, piecePositions[turn]['player'].z);
+
+		for(let i = 0; i < this._boxs.length; i++){
+			console.log(this._pieceHistories[turn])
+			let piece = this._boxs[i];
+			piece.move(piecePositions[turn]['boxs'][i].x, piecePositions[turn]['boxs'][i].z);
+		}
+		console.log(turn + "ターン目に戻りました。")
+		this._turn = turn + 1;
+
+	}
+
 
 	//コンソール表示
 	dataPrint(){
