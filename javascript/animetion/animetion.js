@@ -108,6 +108,7 @@ export class Animation{
         if (!this._target[i].length) return null;
 
         let data = this._target[i][0];
+        if (data === null) return null;
 
         let result = null;
 
@@ -144,6 +145,7 @@ export class Animation{
         if (!this._target[i].length) return null;
 
         let data = this._target[i][0];
+        if (data === null) return null;
 
         let result = null;
 
