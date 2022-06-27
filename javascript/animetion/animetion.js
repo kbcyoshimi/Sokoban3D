@@ -42,6 +42,7 @@ export class Animation{
         for (let i = 0; i < this._target.length; i++){
             for (let j = 0; j < this._target[i].length; j++){
                 let data = this._target[i][j];
+                if (data === null) continue;
                 switch (data.key) {
                     case MOVE :
                     case TELEPORT :
