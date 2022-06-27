@@ -10,6 +10,8 @@ export class Game{
 
 	_mapLength;
 
+	_preparedAnimation;
+
 	_animation;
 	//[turn]
 	_mapHistories;
@@ -21,7 +23,7 @@ export class Game{
 	constructor (data){
 		//ターンの初期化
 		this._turn = 0;
-		
+
 		this._orgData = JSON.parse(JSON.stringify(data));
 		this._player = new Piece(data.start.x, data.start.z, "Player", 0);
 		this._boxs = [];
@@ -36,6 +38,7 @@ export class Game{
 		}
 		this._mapLength = this._map.length;
 
+		this._preparedAnimation = null;
 		this._animation = null;
 
 		this._mapHistories = new Array();
@@ -106,6 +109,7 @@ export class Game{
 	//プレイヤー移動処理
 	move(direction){
 		//animation 初期化
+		this._preparedAnimation = new Array();
 		this._animation = new Array();
 		for(let i = 0; i < this._boxs.length + 1; i++){
 			this._animation[i] = new Array();
@@ -164,8 +168,13 @@ export class Game{
 		//pieceの座標を保存
 		this.generatePiecePositions();
 
-		//移動情報を返す
+		//アニメーション情報の形式を整える
+		this.convertAnimation();
+
+		//アニメーション情報を返す
 		console.log((this._turn) + "ターン目終了");
+		console.log((this._turn) + "ターン目のアニメーション情報");
+		console.log(this._animation);
 		this._turn ++;
 		return Array.from(this._animation);
 	}
@@ -325,6 +334,7 @@ export class Game{
 			const pushSwitchNum = 10;
 			let changedTile = tile - pushSwitchNum;
 			this.changeTile(x, z, changedTile)
+			this.generateAnimationP("push", x, z);
 			console.log("open door");
 			return;
 		}
@@ -341,6 +351,7 @@ export class Game{
 			const pullSwitchNum = 10;
 			let changedTile = tile + pullSwitchNum;
 			this.changeTile(x, z, changedTile);
+			this.generateAnimationP("pull", x, z);
 			console.log("close door");
 			return;
 		}
@@ -368,6 +379,8 @@ export class Game{
 		// });
 		piece.drop();
 		console.log("穴に箱が落ちました。")
+
+		this.generateAnimationI("fall", piece.number);
 	}
 
 	//x,zのドアを開ける関数
@@ -376,6 +389,7 @@ export class Game{
 		let tile = this.getTile(x, z);
 		let changedTile = tile + openDoorNum;
 		this.changeTile(x, z, changedTile);
+		this.generateAnimationP("open", x, z);
 	}
 
 	//x,zのドアを閉める関数
@@ -384,6 +398,7 @@ export class Game{
 		let tile = this.getTile(x, z);
 		let changedTile = tile + closeDoorNum;
 		this.changeTile(x, z, changedTile);
+		this.generateAnimationP("close", x, z);
 	}
 
 	//tileAと一致する座標を返す
@@ -488,7 +503,7 @@ export class Game{
 		return true;
 	}
 
-	//履歴に移動情報を追加する関数
+	//アニメーション情報を追加する関数
 	generateAnimationD(key, x, z, number){
 		let template = {
 			"key" : key,
@@ -501,6 +516,34 @@ export class Game{
 		this._animation[number].push(template);
 	}
 
+	//アニメーション情報を追加する関数
+	generateAnimationI(key, number){
+		let template = {
+			"key" : key
+		};
+		
+		this._animation[number].push(template);
+	}
+
+	//スイッチやドアなどのpieceを伴わない物体のアニメーション情報を追加する関数
+	generateAnimationP(key, x, z){
+		let template = {
+			"key" : key,
+			"order" : (z * 100) + x
+		}
+		this._preparedAnimation.push([null, template]);
+	}
+
+	//preparedAnimationを変換する関数
+	convertAnimation(){
+		this._preparedAnimation.sort((a, b) => {
+			if(a.order < b.order) return -1;
+			if(a.order > b.order) return 1;
+			return 0;
+		});
+		console.log(this._preparedAnimation);
+		this._animation = this._animation.concat(this._preparedAnimation);
+	}
 
 	//履歴にpiece達の座標情報を追加する関数
 	generatePiecePositions(){
