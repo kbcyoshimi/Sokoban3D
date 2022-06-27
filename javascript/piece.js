@@ -23,6 +23,10 @@ export class Piece{
 		return this._z;
 	}
 
+	get isDrop (){
+		return this._isDrop;
+	}
+
 	get code (){
 		return this._code;
 	}
@@ -31,10 +35,17 @@ export class Piece{
 		return this._number;
 	}
 
+	//isDropの値を変更
+	changeIsDrop (value){
+		this._isDrop = value;
+	}
+
 	//指定した座標に移動
 	move (x, z){
+		console.log("\u001b[32m" + JSON.stringify(this) + "から");
 		this._x = x;
 		this._z = z;
+		console.log("\u001b[32m" + JSON.stringify(this) + "へ移動しました。");
 	}
 
 	//穴に落ちる
@@ -42,7 +53,7 @@ export class Piece{
 		if(this._code == "Player"){
 			throw "Playerが穴に落ちようとしています。";
 		}
-		this._isDrop = true;
+		this.changeIsDrop(true);
 	}
 
 	checkPassing (x, z, map){
