@@ -19,6 +19,9 @@ export class Game{
 	_turn;
 
 	constructor (data){
+		//ターンの初期化
+		this._turn = 0;
+		
 		this._orgData = JSON.parse(JSON.stringify(data));
 		this._player = new Piece(data.start.x, data.start.z, "Player", 0);
 		this._boxs = [];
@@ -39,7 +42,9 @@ export class Game{
 		this._mapHistories[0] = Array.from(this._map);
 
 		this._pieceHistories = new Array();
+		this.generatePiecePositions();
 
+		//ターンを進める
 		this._turn = 1;
 	}
 
@@ -154,8 +159,7 @@ export class Game{
 		this.turnend();
 
 		//mapの状態を記録
-		this._mapHistories[this._turn] = Array.from(this._map);
-		console.log(this._mapHistories);
+		this._mapHistories[this._turn] = JSON.parse(JSON.stringify(this._map));
 
 		//pieceの座標を保存
 		this.generatePiecePositions();
@@ -163,7 +167,7 @@ export class Game{
 		//移動情報を返す
 		console.log((this._turn) + "ターン目終了");
 		this._turn ++;
-		return this._animation;
+		return Array.from(this._animation);
 	}
 
 	//ターンエンド時
@@ -283,9 +287,7 @@ export class Game{
 		} 
 
 		//対象物を移動させる
-		console.log("\u001b[32m" + JSON.stringify(piece) + "から");
 		piece.move(destinationX, destinationZ);
-		console.log("\u001b[32m" + JSON.stringify(piece) + "へ移動しました。");
 
 		this.generateAnimationD("move", destinationX, destinationZ, piece.number)
 	}
@@ -513,7 +515,8 @@ export class Game{
 		for(const box of this._boxs){
 			let tmp = {
 				"x" : box.x,
-				"z" : box.z
+				"z" : box.z,
+				"isDrop" : box.isDrop
 			}
 			result.boxs.push(tmp);
 		}
@@ -522,7 +525,7 @@ export class Game{
 
 	//手戻り操作
 	//指定turnの"開始前"の状態に戻る（終了後ではなく開始前）
-	back(turn = this._turn - 1){
+	back(turn = this._turn - 2){
 		if(turn < 0){
 			throw "turnの値が不適切です。"
 		}
@@ -540,8 +543,9 @@ export class Game{
 			console.log(this._pieceHistories[turn])
 			let piece = this._boxs[i];
 			piece.move(piecePositions[turn]['boxs'][i].x, piecePositions[turn]['boxs'][i].z);
+			piece.changeIsDrop(piecePositions[turn]['boxs'][i].isDrop);
 		}
-		console.log(turn + "ターン目に戻りました。")
+		console.log((turn) + "ターン目終了時にに戻りました。")
 		this._turn = turn + 1;
 
 	}
