@@ -13,6 +13,10 @@ const MOVE_PROPERTYS = ["position"];
 const TELEPORT = "teleport";
 const TELEPORT_PROPERTYS = ["position"];
 
+const FALL = "fall";
+const FALL_VALUE = -90;
+const FALL_PROPERTYS = ["positionY"];
+ 
 export class Animation{
 
     //アニメーション開始時間
@@ -48,6 +52,9 @@ export class Animation{
                     case TELEPORT :
                         this._moveInit(data, i, j);
                         break;
+                    case FALL :
+                        this._fallInit(data, i, j);
+                        break
                     default :
                 }
             }
@@ -72,6 +79,12 @@ export class Animation{
         let z = data.destination.z - data.position.z;
         
         data.distance = {"x" : x, "z" : z};
+    }
+
+    _fallInit (data, i, j){
+        data.position = this._target[i][j - 1].destination;
+
+        data.distance = {"y" : FALL_VALUE};
     }
 
     //準備完了フラグを返す
@@ -117,6 +130,9 @@ export class Animation{
             case TELEPORT :
                 result = this._moveCalc(data);
                 break;
+            case FALL :
+                result = this._fallCalc(data);
+                break
             default :
         }
 
@@ -140,6 +156,21 @@ export class Animation{
         }
     }
 
+    _fallCalc (data){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            "propertys" : FALL_PROPERTYS,
+            "values" : [value]
+        }
+    }
+
     //ラップの最後の処理（ずれの調整など）
     wrapLast (i){
         if (!this._target[i].length) return null;
@@ -154,6 +185,8 @@ export class Animation{
             case TELEPORT :
                 result = this._moveLast(data);
                 break;
+            case FALL :
+                result = this._fallLast(data);
             default :
         }
 
@@ -168,6 +201,21 @@ export class Animation{
 
         return {
             "propertys" : MOVE_PROPERTYS,
+            "values" : [value]
+        }
+    }
+
+    _fallLast(data) {
+        let x = data.position.x,
+            y = data.distance.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        console.log(data);
+
+        return {
+            "propertys" : FALL_PROPERTYS,
             "values" : [value]
         }
     }
