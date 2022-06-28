@@ -16,6 +16,11 @@ const MODEL_URLs = {
 
 //テクスチャのurl
 const TEXTURE_URLs = {
+    "background" : {
+        "sky" : "img/backgrounds/sky.jpg",
+        "forest" : "img/backgrounds/forest.jpg",
+        "bleary_blue" : "img/backgrounds/bleary_blue.jpg"
+    },
     "wall" : {
         "brick" : "img/walls/brick.jpg"
     },
@@ -117,6 +122,7 @@ const degToRad = THREE.MathUtils.degToRad;
 //https://pixnio.com/ja/%E9%A2%A8%E6%99%AF/%E5%9C%B0%E9%9D%A2/%E6%9A%97%E3%81%84%E3%80%81%E5%9C%B0%E9%9D%A2%E3%80%81%E3%83%86%E3%82%AF%E3%82%B9%E3%83%81%E3%83%A3%E3%80%81%E3%82%B5%E3%83%BC%E3%83%95%E3%82%A7%E3%82%B9%E3%80%81%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3
 //魔法陣
 //https://illust8.com/contents/5539
+//https://www.beiz.jp/
 
 export class StageScene extends Scene{
 
@@ -156,6 +162,9 @@ export class StageScene extends Scene{
         "entry" : [],
         "exit" : []
     }
+
+    //背景テクスチャ
+    _backgroundTextre = null;
     
     constructor (data){
         super("Stage");
@@ -213,6 +222,10 @@ export class StageScene extends Scene{
         let jsonTextureError = false;
         if (data.texture === undefined) jsonTextureError = true;
 
+        !jsonTextureError && data.texture.background ? 
+        this._loadTextureDataCreate("background", data.texture.background):
+        jsonTextureError = true;
+
         !jsonTextureError && data.texture.floor ? 
         this._loadTextureDataCreate("floor", data.texture.floor):
         jsonTextureError = true;
@@ -225,15 +238,17 @@ export class StageScene extends Scene{
 
         if (jsonTextureError) console.error("JSONのテクスチャ情報にエラーがあります");
         //テクスチャ情報
+        //背景：必須
         //床：必須    
         //壁：必須
-        //ベルトコンベア：ステージに存在しない場合は不要
+        //ベルトコンベア：ステージに存在する場合は必須
         //テレポート：内部で設定するため指定不要
         //その他：未作成、もしくは指定不要
         //使用可能なテクスチャは定数TEXTURE_URLsを参照
 
         //例
         //"texture" : {
+        //    "background" : "sky",
         //    "floor" : "grass",
         //    "wall" : "brick",
         //    "conveyor" : "normal"
@@ -407,6 +422,9 @@ export class StageScene extends Scene{
                 this._scene.add(mesh);
             }
         })
+
+        //背景の適用
+        this._scene.background = this._backgroundTextre;
     }
 
     //テスト用(1)
@@ -444,16 +462,23 @@ export class StageScene extends Scene{
     //読み込むテクスチャデータの情報を作成し、保持する
     _loadTextureDataCreate (key, key2){
         //読み込むデータの情報をテクスチャの配列にプッシュ
-        typeof(key2) !== "number" ?
+        typeof(key2) === "number" ?
         this._loadData.texture.push({
             "url" : TEXTURE_URLs[key][key2],
             "key" : key,
+            "index" : key2,
+            "flag" : false
+        }):
+        key === "background" ?
+        this._loadData.texture.push({
+            "url" : TEXTURE_URLs[key][key2],
+            "key" : key,
+            "isBG" : true,
             "flag" : false
         }):
         this._loadData.texture.push({
             "url" : TEXTURE_URLs[key][key2],
             "key" : key,
-            "index" : key2,
             "flag" : false
         });
     }
@@ -503,6 +528,8 @@ export class StageScene extends Scene{
                 //読み込んだテクスチャを適用
                 texture[i].index ?
                 this._textureApply(texture[i].key, tex, texture[i].index):
+                texture[i].isBG ?
+                this._backgroundTextre = tex:
                 this._textureApply(texture[i].key, tex);
                 //読み込み完了フラグを有効化
                 texture[i].flag = true;
