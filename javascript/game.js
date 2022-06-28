@@ -42,7 +42,7 @@ export class Game{
 		this._animation = null;
 
 		this._mapHistories = new Array();
-		this._mapHistories[0] = Array.from(this._map);
+		this._mapHistories[0] = JSON.parse(JSON.stringify(this._map));
 
 		this._pieceHistories = new Array();
 		this.generatePiecePositions();
@@ -572,7 +572,7 @@ export class Game{
 		if(turn < 0){
 			throw "turnの値が不適切です。"
 		}
-		let mapHistory = this._mapHistories[turn];
+		let mapHistory = JSON.parse(JSON.stringify(this._mapHistories[turn]));
 
 		//mapの手戻り
 		this._map = Array.from(mapHistory);
