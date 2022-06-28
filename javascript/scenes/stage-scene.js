@@ -109,7 +109,6 @@ const UPPER_LAYER = 900;
 
 //オブジェクトのプロパティ名
 const POSITION = "position";
-const POSITION_Y = "positionY"
 
 //度をラジアンに変換する関数
 const degToRad = THREE.MathUtils.degToRad;
@@ -546,11 +545,13 @@ export class StageScene extends Scene{
             let property = propertys[i];
             switch (property){
                 case POSITION :
-                    this._moveObject[code][POSITION].x = values[i].x;
-                    this._moveObject[code][POSITION].z = values[i].z;
+                    if (code === 0){
+                        this._moveObject[code][POSITION].x = values[i].x;
+                        this._moveObject[code][POSITION].z = values[i].z;
+                    }else {
+                        this._moveObject[code][POSITION].copy(values[i]);
+                    }
                     break;
-                case POSITION_Y :
-                    this._moveObject[code][POSITION].y = values[i].y;
                 default:
             }
         }

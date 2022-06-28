@@ -6,16 +6,23 @@ const SIDE = 100;
 //1ラップの所要時間
 const REQUIERD_TIME = 100;
 
-//アニメーションの種類とそれに応じたプロパティ名
+//アニメーションの種類とプロパティ名
 const MOVE = "move";
-const MOVE_PROPERTYS = ["position"];
 
 const TELEPORT = "teleport";
-const TELEPORT_PROPERTYS = ["position"];
+
+const PUSH = "push";
+
+const PULL = "pull";
+
+const OPEN = "open";
+
+const CLOSE = "close";
 
 const FALL = "fall";
 const FALL_VALUE = -90;
-const FALL_PROPERTYS = ["positionY"];
+
+const POSITION = "position"
  
 export class Animation{
 
@@ -151,7 +158,7 @@ export class Animation{
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : MOVE_PROPERTYS,
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
@@ -166,7 +173,7 @@ export class Animation{
         let value = new THREE.Vector3(x, y, z);
 
         return {
-            "propertys" : FALL_PROPERTYS,
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
@@ -200,7 +207,7 @@ export class Animation{
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : MOVE_PROPERTYS,
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
@@ -215,7 +222,7 @@ export class Animation{
         console.log(data);
 
         return {
-            "propertys" : FALL_PROPERTYS,
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
