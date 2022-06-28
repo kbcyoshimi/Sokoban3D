@@ -17,13 +17,13 @@ const MODEL_URLs = {
 //テクスチャのurl
 const TEXTURE_URLs = {
     "wall" : {
-        "brick" : "img/brick.jpg"
+        "brick" : "img/walls/brick.jpg"
     },
     "floor" : {
-        "grass" : "img/grass.jpg"
+        "grass" : "img/floors/grass.jpg"
     },
     "conveyor" : {
-        "normal" : "img/conveyor.png"
+        "normal" : "img/conveyors/normal_conveyor.png"
     },
     "entry" : [
         null,
