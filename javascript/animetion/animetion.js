@@ -6,13 +6,24 @@ const SIDE = 100;
 //1ラップの所要時間
 const REQUIERD_TIME = 100;
 
-//アニメーションの種類とそれに応じたプロパティ名
+//アニメーションの種類とプロパティ名
 const MOVE = "move";
-const MOVE_PROPERTYS = ["position"];
 
 const TELEPORT = "teleport";
-const TELEPORT_PROPERTYS = ["position"];
 
+const PUSH = "push";
+
+const PULL = "pull";
+
+const OPEN = "open";
+
+const CLOSE = "close";
+
+const FALL = "fall";
+const FALL_VALUE = -90;
+
+const POSITION = "position"
+ 
 export class Animation{
 
     //アニメーション開始時間
@@ -48,6 +59,9 @@ export class Animation{
                     case TELEPORT :
                         this._moveInit(data, i, j);
                         break;
+                    case FALL :
+                        this._fallInit(data, i, j);
+                        break
                     default :
                 }
             }
@@ -72,6 +86,12 @@ export class Animation{
         let z = data.destination.z - data.position.z;
         
         data.distance = {"x" : x, "z" : z};
+    }
+
+    _fallInit (data, i, j){
+        data.position = this._target[i][j - 1].destination;
+
+        data.distance = {"y" : FALL_VALUE};
     }
 
     //準備完了フラグを返す
@@ -117,6 +137,9 @@ export class Animation{
             case TELEPORT :
                 result = this._moveCalc(data);
                 break;
+            case FALL :
+                result = this._fallCalc(data);
+                break
             default :
         }
 
@@ -135,7 +158,22 @@ export class Animation{
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : MOVE_PROPERTYS,
+            "propertys" : [POSITION],
+            "values" : [value]
+        }
+    }
+
+    _fallCalc (data){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
@@ -154,6 +192,8 @@ export class Animation{
             case TELEPORT :
                 result = this._moveLast(data);
                 break;
+            case FALL :
+                result = this._fallLast(data);
             default :
         }
 
@@ -167,7 +207,22 @@ export class Animation{
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : MOVE_PROPERTYS,
+            "propertys" : [POSITION],
+            "values" : [value]
+        }
+    }
+
+    _fallLast(data) {
+        let x = data.position.x,
+            y = data.distance.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        console.log(data);
+
+        return {
+            "propertys" : [POSITION],
             "values" : [value]
         }
     }
