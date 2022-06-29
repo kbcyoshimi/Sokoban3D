@@ -13,6 +13,7 @@ const YOU = "you";
 const BOX = "box";
 const BOXS = "boxs";
 const FLOOR = "floor";
+const GOAL = "goal";
 const WALL = "wall";
 const CONVEYOR = "conveyor";
 const TELEPORT_ENTRY = "entry";
@@ -39,6 +40,7 @@ const IS_BG = "isBG";
 //ステージのテクスチャのデフォルト
 const BACKGROUND_DEFAULT = "sky";
 const FLOOR_DEFAULT = "grass";
+const GOAL_DEFAULT = "yellow";
 const WALL_DEFAULT = "brick";
 const CONVEYOR_DEFAULT = "conveyor";
 
@@ -60,6 +62,9 @@ const TEXTURE_URLs = {
     },
     [FLOOR] : {
         "grass" : "img/floors/grass.jpg"
+    },
+    [GOAL] : {
+        "yellow" : "img/goals/yellow.jpg"
     },
     [WALL] : {
         "brick" : "img/walls/brick.jpg"
@@ -107,6 +112,16 @@ const DOOR_N = 9;
 //床オブジェクトのデータ
 const FLOOR_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, SIDE, SIDE),
+    "mat": new THREE.MeshBasicMaterial()
+}
+
+//ゴールオブジェクトのデータ
+const GOAL_RADIUS = 40;
+const GOAL_TUBE = 5;
+const GOAL_RADIAL_SEGMENTS = 2;
+const GOAL_TUBULAR_SEGMENTS = 16;
+const GOAL_DATA = {
+    "geo": () => new THREE.TorusGeometry(GOAL_RADIUS, GOAL_TUBE, GOAL_RADIAL_SEGMENTS, GOAL_TUBULAR_SEGMENTS),
     "mat": new THREE.MeshBasicMaterial()
 }
 
@@ -188,6 +203,7 @@ export class StageScene extends Scene{
     //壁（トンネル）、床、コンベアが対象
     _groupGeometry = {
         [FLOOR] : [],
+        [GOAL] : [],
         [WALL] : [],
         [CONVEYOR] : []
     }
@@ -199,6 +215,7 @@ export class StageScene extends Scene{
     //使用するテクスチャのマテリアル
     _useTextureMaterial = {
         [FLOOR] : FLOOR_DATA.mat,
+        [GOAL] : GOAL_DATA.mat,
         [WALL] : WALL_DATA.mat,
         [CONVEYOR] : CONVEYOR_DATA.mat,
         [TELEPORT_ENTRY] : [],
@@ -227,7 +244,7 @@ export class StageScene extends Scene{
                 let id = data.map[z][x];
                 switch(extract(id, 5)){
                     case FLOOR_N:
-                        this._floorGenerate(x, z);
+                        this._floorGenerate(x, z, id);
                         break;
                     case WALL_N:
                         this._wallGenerate(x, z);
@@ -268,11 +285,13 @@ export class StageScene extends Scene{
         if (data[TEXTURE] === undefined){
             this._loadTextureDataCreate(BACKGROUND, BACKGROUND_DEFAULT);
             this._loadTextureDataCreate(FLOOR, FLOOR_DEFAULT);
+            this._loadTextureDataCreate(GOAL, GOAL_DEFAULT);
             this._loadTextureDataCreate(WALL, WALL_DEFAULT);
             if (existsConveyor) this._loadTextureDataCreate(CONVEYOR, CONVEYOR_DEFAULT);
         }else {
             if (data[TEXTURE][BACKGROUND]) this._loadTextureDataCreate(BACKGROUND, data[TEXTURE][BACKGROUND]);
             if (data[TEXTURE][FLOOR]) this._loadTextureDataCreate(FLOOR, data[TEXTURE][FLOOR]);
+            if (data[TEXTURE][GOAL]) this._loadTextureDataCreate(GOAL, data[TEXTURE][GOAL]);
             if (data[TEXTURE][WALL]) this._loadTextureDataCreate(WALL, data[TEXTURE][WALL]);
             if (existsConveyor && data[TEXTURE][CONVEYOR]) this._loadTextureDataCreate(CONVEYOR, data[TEXTURE][CONVEYOR]);
         }
@@ -296,10 +315,24 @@ export class StageScene extends Scene{
     }    
  
     //床のデータを作成し、保持する
-    _floorGenerate (x, z){
+    _floorGenerate (x, z, id){
         let floor = FLOOR_DATA.geo();
         floor.translate(x * SIDE, -SIDE, z * SIDE);
         this._groupGeometry[FLOOR].push(floor);
+
+        //idがなければここまで
+        if (!id) return;
+
+        let index = extract(id, 2);
+        if (index === 1){
+            let goal = GOAL_DATA.geo();
+
+            goal.rotateX(degToRad(CIRCLE_UP));
+
+            let y = (-SIDE + SIDE / 2) + 1;
+            goal.translate(x * SIDE, y, z * SIDE);
+            this._groupGeometry[GOAL].push(goal);
+        }
     }
 
     //壁のデータを作成し、保持する
