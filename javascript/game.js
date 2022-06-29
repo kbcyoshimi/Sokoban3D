@@ -442,6 +442,9 @@ export class Game{
 				let tileB = this.getTile(x, z);
 				let idB = extract(tileB, 1);
 				if(idA === idB){
+					if(tileA === tileB){
+						continue;
+					}
 					console.log("ペアのタイルの座標を見つけました。");
 					let result = {"x" : x, "z" : z};
 					return result;
