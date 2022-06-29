@@ -54,7 +54,7 @@ export class CanvasManager{
 
     //現在は直接ステージに飛ぶ
     _titleKeydown (event){
-        this._getStageData("./stages/test.json");
+        this._getStageData("./stages/stage1.json");
     }
 
     _stageKeydown (event){
