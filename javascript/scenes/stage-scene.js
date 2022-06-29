@@ -21,7 +21,7 @@ const TELEPORT_EXIT = "exit";
 const HOLE = "hole";
 const DOOR = "door";
 
-//
+//読み込みデータ用のキー
 const MODEL = "model";
 const TEXTURE = "texture";
 
@@ -42,7 +42,7 @@ const BACKGROUND_DEFAULT = "sky";
 const FLOOR_DEFAULT = "grass";
 const GOAL_DEFAULT = "yellow";
 const WALL_DEFAULT = "brick";
-const CONVEYOR_DEFAULT = "conveyor";
+const CONVEYOR_DEFAULT = "normal";
 
 
 //3Dモデルのurl
@@ -604,6 +604,8 @@ export class StageScene extends Scene{
                 //読み込み完了フラグを有効化
                 model[i][FLAG] = true;
                 this._loadComplete(callback);
+            }, null, () => {
+                console.log(i);
             });
         }
 
@@ -630,6 +632,8 @@ export class StageScene extends Scene{
                 this._loadComplete(callback);
                 //テスト用(1)
                 this._toggle[texture[i].key] = tex;
+            }, null, () => {
+                console.log(i);
             });
         }
     }
