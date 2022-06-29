@@ -47,6 +47,11 @@ export class Game{
 		this._pieceHistories = new Array();
 		this.generatePiecePositions();
 
+		//ゴールチェック用
+		let goals = this.searchPositions(10010);
+		for(let i = 0; i < goals.length; i++){
+			console.log((i + 1) + "つ目のゴールの位置 : " + JSON.stringify(goals[i]));
+		}
 		//ターンを進める
 		this._turn = 1;
 	}
@@ -108,6 +113,7 @@ export class Game{
 
 	//プレイヤー移動処理
 	move(direction){
+		console.log(this._turn + "ターン目開始")
 		//animation 初期化
 		this._preparedAnimation = new Array();
 		this._animation = new Array();
@@ -147,7 +153,7 @@ export class Game{
 			}
 			let isSame = box.comparePosition(playerDestination.x, playerDestination.z);
 			if(isSame){
-				console.log("Playerの行先にBoxがあります")
+				//console.log("Playerの行先にBoxがあります")
 				ConveyBox = box;
 				break;
 			}
@@ -155,7 +161,7 @@ export class Game{
 
 		//荷物の移動
 		if(ConveyBox){
-			console.log("荷物動きます");
+			//console.log("荷物動きます");
 			this.convey(ConveyBox,directionNum);
 		}
 		//プレイヤーの移動
@@ -173,8 +179,9 @@ export class Game{
 
 		//アニメーション情報を返す
 		console.log((this._turn) + "ターン目終了");
-		console.log((this._turn) + "ターン目のアニメーション情報");
-		console.log(this._animation);
+		//.log((this._turn) + "ターン目終了時のアニメーション情報");
+		//console.log(this._animation);
+		//console.log(this._map);
 		this._turn ++;
 		return Array.from(this._animation);
 	}
@@ -228,12 +235,12 @@ export class Game{
 			if(!this.existsBox(x, z)){
 				goalFlag = false;
 			}else{
-				console.log("\x1b[33m" + JSON.stringify(goal) + "の上に荷物あります。")
+				//console.log("\x1b[33m" + JSON.stringify(goal) + "の上に荷物あります。")
 			}
 		}
 		//ゴール処理
 		if(goalFlag){
-			console.log("GOAL!!")
+			console.log("\x1b[33m" + "ゲームクリア！！");
 		}
 	}
 
@@ -291,7 +298,7 @@ export class Game{
 
 		//移動できるか確認
 		if(!this.checkPassing(destinationX, destinationZ, piece.code == "Box")){
-			console.log("コンベアの先に障害物があります。");
+			//console.log("コンベアの先に障害物があります。");
 			return;
 		} 
 
@@ -306,19 +313,19 @@ export class Game{
 		const teleportTile = 50810
 		let tile = teleportTile + teleportId;
 		let position = this.searchPosition(tile);
-		console.log("teleport" + JSON.stringify(position))
+		//console.log("teleport" + JSON.stringify(position))
 		let destinationX = position.x;
 		let destinationZ = position.z;
 		//移動先に障害物があるか確認
 		if(!this.checkPassing(destinationX, destinationZ, true)){
-			console.log("テレポートできません。")
+			//console.log("テレポートできません。")
 			return;
 		} 
-		console.log("対応先を発見");
+		//console.log("対応先を発見");
 		//対象物を移動させる
-		console.log("\x1b[31m" + JSON.stringify(piece) + "から");
+		//console.log("\x1b[31m" + JSON.stringify(piece) + "から");
 		piece.move(destinationX, destinationZ);
-		console.log("\x1b[31m" + JSON.stringify(piece) + "へテレポートしました。");
+		//console.log("\x1b[31m" + JSON.stringify(piece) + "へテレポートしました。");
 
 		this.generateAnimationD("teleport", destinationX, destinationZ, piece.number);
 		return;
@@ -335,7 +342,7 @@ export class Game{
 			let changedTile = tile - pushSwitchNum;
 			this.changeTile(x, z, changedTile)
 			this.generateAnimationP("push", x, z);
-			console.log("open door");
+			//console.log("open door");
 			return;
 		}
 		throw "スイッチに対応するドアがありません";
@@ -352,7 +359,7 @@ export class Game{
 			let changedTile = tile + pullSwitchNum;
 			this.changeTile(x, z, changedTile);
 			this.generateAnimationP("pull", x, z);
-			console.log("close door");
+			//console.log("close door");
 			return;
 		}
 		throw "スイッチに対応するドアがありません";
@@ -365,7 +372,7 @@ export class Game{
 		let tile = this.getTile(x, z);
 		let hasBox = extract(tile,2);
 		if(hasBox === 1){
-			console.log("既にBOXがあります")
+			//console.log("既にBOXがあります")
 			return;
 		}
 		//対象のタイルを変更
@@ -378,7 +385,7 @@ export class Game{
 		// 	return box !== piece;
 		// });
 		piece.drop();
-		console.log("穴に箱が落ちました。")
+		//console.log("穴に箱が落ちました。")
 
 		this.generateAnimationI("fall", piece.number);
 	}
@@ -430,7 +437,7 @@ export class Game{
 				}
 			}
 		}
-		console.log(result);
+		//console.log(result);
 		return (result ? result : false);
 	}
 
@@ -445,7 +452,7 @@ export class Game{
 					if(tileA === tileB){
 						continue;
 					}
-					console.log("ペアのタイルの座標を見つけました。");
+					//console.log("ペアのタイルの座標を見つけました。");
 					let result = {"x" : x, "z" : z};
 					return result;
 				}
@@ -459,7 +466,7 @@ export class Game{
 		for(const box of this._boxs){
 			if(box.comparePosition(x, z)){
 				if(!box._isDrop){
-					console.log("x = " + x + " z = " + z + " に荷物があります。")
+					//console.log("x = " + x + " z = " + z + " に荷物があります。")
 					return true;
 				}
 			}
@@ -486,7 +493,7 @@ export class Game{
 		let passing = extract(tile, 4);
 		if(passing !== 0){
 			if(!(passing === 2 && isBox)){
-				console.log(passing);
+				//console.log(passing);
 				return false;
 			}
 		}
@@ -544,7 +551,7 @@ export class Game{
 			if(a.order > b.order) return 1;
 			return 0;
 		});
-		console.log(this._preparedAnimation);
+		//console.log(this._preparedAnimation);
 		this._animation = this._animation.concat(this._preparedAnimation);
 	}
 
@@ -586,7 +593,7 @@ export class Game{
 		player.move(piecePositions[turn]['player'].x, piecePositions[turn]['player'].z);
 
 		for(let i = 0; i < this._boxs.length; i++){
-			console.log(this._pieceHistories[turn])
+			//console.log(this._pieceHistories[turn])
 			let piece = this._boxs[i];
 			piece.move(piecePositions[turn]['boxs'][i].x, piecePositions[turn]['boxs'][i].z);
 			piece.changeIsDrop(piecePositions[turn]['boxs'][i].isDrop);
