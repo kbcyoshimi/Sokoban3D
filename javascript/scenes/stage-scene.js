@@ -7,30 +7,67 @@ import { extract } from "../functions";
 //正方形の1辺の長さ
 const SIDE = 100;
 
+//JSONなどのキー
+const BACKGROUND = "background";
+const YOU = "you";
+const BOX = "box";
+const BOXS = "boxs";
+const FLOOR = "floor";
+const WALL = "wall";
+const CONVEYOR = "conveyor";
+const TELEPORT_ENTRY = "entry";
+const TELEPORT_EXIT = "exit";
+const HOLE = "hole";
+const DOOR = "door";
+
+//
+const MODEL = "model";
+const TEXTURE = "texture";
+
+//モデル読み込みデータ、テクスチャ読み込みデータ共に使用するキー
+const URL = "url";
+const FLAG = "flag";
+
+//モデル読み込みデータで使用するキー
+const IS_MOVE = "isMove";
+
+//テクスチャ読み込みデータで使用するキー
+const KEY = "key";
+const INDEX = "index";
+const IS_BG = "isBG";
+
+//ステージのテクスチャのデフォルト
+const BACKGROUND_DEFAULT = "Sky";
+const FLOOR_DEFAULT = "grass";
+const WALL_DEFAULT = "brick";
+const CONVEYOR_DEFAULT = "conveyor";
+
+
 //3Dモデルのurl
 const MODEL_URLs = {
-    "you" : "model/you.glb",
-    "box" : "model/box.glb",
-    "hole" : "model/hole.glb"
+    [YOU] : "model/you.glb",
+    [BOX] : "model/box.glb",
+    [HOLE] : "model/hole.glb",
+    [DOOR] : "model/door.glb"
 }
 
 //テクスチャのurl
 const TEXTURE_URLs = {
-    "background" : {
+    [BACKGROUND] : {
         "sky" : "img/backgrounds/sky.jpg",
         "forest" : "img/backgrounds/forest.jpg",
         "bleary_blue" : "img/backgrounds/bleary_blue.jpg"
     },
-    "wall" : {
-        "brick" : "img/walls/brick.jpg"
-    },
-    "floor" : {
+    [FLOOR] : {
         "grass" : "img/floors/grass.jpg"
     },
-    "conveyor" : {
+    [WALL] : {
+        "brick" : "img/walls/brick.jpg"
+    },
+    [CONVEYOR] : {
         "normal" : "img/conveyors/normal_conveyor.png"
     },
-    "entry" : [
+    [TELEPORT_ENTRY] : [
         null,
         "img/teleports/teleport_entry_blue.png",
         "img/teleports/teleport_entry_red.png",
@@ -42,7 +79,7 @@ const TEXTURE_URLs = {
         "img/teleports/teleport_entry_brown.png",
         "img/teleports/teleport_entry_black.png"
     ],
-    "exit" : [
+    [TELEPORT_EXIT] : [
         null,
         "img/teleports/teleport_exit_blue.png",
         "img/teleports/teleport_exit_red.png",
@@ -68,28 +105,28 @@ const HOLE_N = 8;
 const DOOR_N = 9;
 
 //床オブジェクトのデータ
-const FLOOR = {
+const FLOOR_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, SIDE, SIDE),
     "mat": new THREE.MeshBasicMaterial()
 }
 
 //壁オブジェクトのデータ
-const WALL = {
+const WALL_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, SIDE, SIDE),
     "mat": new THREE.MeshBasicMaterial()
 }
 
 //屋根オブジェクトのデータ(トンネル用)
 const ROOF_H = 5;
-const TUNNEL_ROOF = {
+const TUNNEL_ROOF_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, ROOF_H, SIDE),
     //使用マテリアルは壁と同一
-    "mat": WALL.mat
+    "mat": WALL_DATA.mat
 }
 
-//ベルトコンベアの向きを決定するための配列
+//コンベアオブジェクトのデータ
 const CONVEYOR_DIRECTION = [null, 180, 90, 0, 270];
-const CONVEYOR = {
+const CONVEYOR_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, SIDE, SIDE),
     "mat": new THREE.MeshBasicMaterial()
 }
@@ -100,10 +137,14 @@ const CIRCLE_SEGMENTS = 32;
 const CIRCLE_UP = 270;
 const CIRCLE_ENTRY = 7;
 const CIRCLE_EXIT = 8;
-const CIRCLE = {
+const CIRCLE_DATA = {
     "geo": () => new THREE.CircleGeometry(CIRCLE_RADIUS, CIRCLE_SEGMENTS),
     "mat": () => new THREE.MeshBasicMaterial()
 }
+
+//ドアオブジェクトのデータ
+const DOOR_EW = 5;
+const DOOR_SN = 6;
 
 //プレイヤーオブジェクトの調整用データ
 const YOU_SCALE = new THREE.Vector3(100, 90, 100);
@@ -128,39 +169,40 @@ export class StageScene extends Scene{
 
     //読み込むデータの情報
     _loadData = {
-        "model" : [],
-        "texture" : []
+        [MODEL] : [],
+        [TEXTURE] : []
     };
 
     //移動、回転など、動かす必要のあるオブジェクトのデータ
-    //単体で使うことが多いので別に取っておく
     _moveObject = [];
+    //動かすことのないオブジェクトのデータ
+    _otherObject = [];
     //モデルを使用したオブジェクトの集合
     //動かすものと動かさないもので分類
     _modelObject = {
         "moveObject" : this._moveObject,
-        "other" : []
+        "other" : this._otherObject
     }
     
     //ジオメトリをまとめるオブジェクトの集合
     //壁（トンネル）、床、コンベアが対象
     _groupGeometry = {
-        "floor" : [],
-        "wall" : [],
-        "conveyor" : []
+        [FLOOR] : [],
+        [WALL] : [],
+        [CONVEYOR] : []
     }
     _teleportGeometry = {
-        "entry" : [],
-        "exit" : []
+        [TELEPORT_ENTRY] : [],
+        [TELEPORT_EXIT] : []
     };
 
     //使用するテクスチャのマテリアル
     _useTextureMaterial = {
-        "floor" : FLOOR.mat,
-        "wall" : WALL.mat,
-        "conveyor" : CONVEYOR.mat,
-        "entry" : [],
-        "exit" : []
+        [FLOOR] : FLOOR_DATA.mat,
+        [WALL] : WALL_DATA.mat,
+        [CONVEYOR] : CONVEYOR_DATA.mat,
+        [TELEPORT_ENTRY] : [],
+        [TELEPORT_EXIT] : []
     }
 
     //背景テクスチャ
@@ -169,10 +211,12 @@ export class StageScene extends Scene{
     constructor (data){
         super("Stage");
 
+        console.log(MODEL_URLs);
+
         //プレイヤーと荷物の情報を生成
-        this._loadModelDataCreate("you", data.start, true, YOU_SCALE);   
-        for(let box of data.boxs) {
-            this._loadModelDataCreate("box", box);
+        this._loadModelDataCreate(YOU, data.start, true, YOU_SCALE);   
+        for(let box of data[BOXS]) {
+            this._loadModelDataCreate(BOX, box);
         }
 
         let existsConveyor = false;
@@ -208,6 +252,8 @@ export class StageScene extends Scene{
                         this._holeGenerate(x, z);
                         break;
                     case DOOR_N:
+                        this._doorGenerate(x, z, id);
+                        this._floorGenerate(x, z);
                         break;
                     default:
                         console.error("謎オブジェ");
@@ -219,24 +265,18 @@ export class StageScene extends Scene{
         this._gridHelperGenerate(data.side);
 
         //テクスチャ読み込み指定
-        let jsonTextureError = false;
-        if (data.texture === undefined) jsonTextureError = true;
+        if (data[TEXTURE] === undefined){
+            this._loadTextureDataCreate(BACKGROUND, BACKGROUND_DEFAULT);
+            this._loadTextureDataCreate(FLOOR, FLOOR_DEFAULT);
+            this._loadTextureDataCreate(WALL, WALL_DEFAULT);
+            if (existsConveyor) this._loadTextureDataCreate(CONVEYOR, CONVEYOR_DEFAULT);
+        }
 
-        !jsonTextureError && data.texture.background ? 
-        this._loadTextureDataCreate("background", data.texture.background):
-        jsonTextureError = true;
+        if (data[TEXTURE][BACKGROUND]) this._loadTextureDataCreate(BACKGROUND, data[TEXTURE][BACKGROUND]);
+        if (data[TEXTURE][FLOOR]) this._loadTextureDataCreate(FLOOR, data[TEXTURE][FLOOR]);
+        if (data[TEXTURE][WALL]) this._loadTextureDataCreate(WALL, data[TEXTURE][WALL]);
+        if (existsConveyor && data[TEXTURE][CONVEYOR]) this._loadTextureDataCreate(CONVEYOR, data[TEXTURE][CONVEYOR])
 
-        !jsonTextureError && data.texture.floor ? 
-        this._loadTextureDataCreate("floor", data.texture.floor):
-        jsonTextureError = true;
-
-        !jsonTextureError && data.texture.wall ?
-        this._loadTextureDataCreate("wall", data.texture.wall):
-        jsonTextureError = true;
-        
-        if (!jsonTextureError && existsConveyor && data.texture.conveyor) this._loadTextureDataCreate("conveyor", data.texture.conveyor)
-
-        if (jsonTextureError) console.error("JSONのテクスチャ情報にエラーがあります");
         //テクスチャ情報
         //背景：必須
         //床：必須    
@@ -257,21 +297,21 @@ export class StageScene extends Scene{
  
     //床のデータを作成し、保持する
     _floorGenerate (x, z){
-        let floor = FLOOR.geo();
+        let floor = FLOOR_DATA.geo();
         floor.translate(x * SIDE, -SIDE, z * SIDE);
-        this._groupGeometry.floor.push(floor);
+        this._groupGeometry[FLOOR].push(floor);
     }
 
     //壁のデータを作成し、保持する
     _wallGenerate (x, z){
-        let wall = WALL.geo();
+        let wall = WALL_DATA.geo();
         wall.translate(x * SIDE, 0, z * SIDE);
-        this._groupGeometry.wall.push(wall);
+        this._groupGeometry[WALL].push(wall);
     }
 
     //トンネルのデータを作成し、保持する
     _tunnelGenerate (x, z){
-        let roof = TUNNEL_ROOF.geo(),
+        let roof = TUNNEL_ROOF_DATA.geo(),
             aboveRoof = null,
             belowRoof = null;
 
@@ -288,23 +328,23 @@ export class StageScene extends Scene{
         aboveRoof.translate(x, above, z);
         belowRoof.translate(x, below, z);
       
-        this._groupGeometry.wall.push(aboveRoof);
-        this._groupGeometry.wall.push(belowRoof);
+        this._groupGeometry[WALL].push(aboveRoof);
+        this._groupGeometry[WALL].push(belowRoof);
     }
 
     //ベルトコンベアのデータを作成し、保持する
     _conveyorGenerate (x, z, id){
-        let conveyor = CONVEYOR.geo();    
+        let conveyor = CONVEYOR_DATA.geo();    
         //ベルトコンベアの向きを設定
         let index = extract(id, 3);
         conveyor.rotateY(degToRad(CONVEYOR_DIRECTION[index]));
         conveyor.translate(x * SIDE, -SIDE, z * SIDE);
-        this._groupGeometry.conveyor.push(conveyor);
+        this._groupGeometry[CONVEYOR].push(conveyor);
     }
 
     //テレポートのデータを作成し、保持する
     _teleportGenerate (x, z, id){
-        let teleport = CIRCLE.geo();
+        let teleport = CIRCLE_DATA.geo();
         //テレポートの面を上向きに設定
         teleport.rotateX(degToRad(CIRCLE_UP));
         
@@ -318,18 +358,18 @@ export class StageScene extends Scene{
         let index = extract(id, 1);
         if (!(typeId === CIRCLE_ENTRY || typeId === CIRCLE_EXIT)) console.error("x : " + x + ", z : " + z + "のテレポートの数字がおかしい");
 
-        let mat = CIRCLE.mat();
+        let mat = CIRCLE_DATA.mat();
 
         //種類、番号に合わせてテクスチャの読み込みデータを作成する
         if (typeId === CIRCLE_ENTRY) {
-            this._teleportGeometry.entry[index] = teleport;
-            this._useTextureMaterial.entry[index] = mat;
-            this._loadTextureDataCreate("entry", index);
+            this._teleportGeometry[TELEPORT_ENTRY][index] = teleport;
+            this._useTextureMaterial[TELEPORT_ENTRY][index] = mat;
+            this._loadTextureDataCreate(TELEPORT_ENTRY, index);
 
         }else if (typeId === CIRCLE_EXIT) {
-            this._teleportGeometry.exit[index] = teleport;
-            this._useTextureMaterial.exit[index] = mat;
-            this._loadTextureDataCreate("exit", index);
+            this._teleportGeometry[TELEPORT_EXIT][index] = teleport;
+            this._useTextureMaterial[TELEPORT_EXIT][index] = mat;
+            this._loadTextureDataCreate(TELEPORT_EXIT, index);
         }
     }
 
@@ -343,11 +383,20 @@ export class StageScene extends Scene{
 
     _holeGenerate (x, z){
         let position = {"x" : x, "z" : z};
-        this._loadModelDataCreate("hole", position, false);
+        this._loadModelDataCreate(HOLE, position, false);
     }
 
-    _doorGenerate (x, z){
+    _doorGenerate (x, z, id){
+        let position = {"x" : x, "z" : z};
 
+        let index = extract(id, 3);
+        let rotateY = -1;
+        if (index === DOOR_EW) rotateY = 0;
+        if (index === DOOR_SN) rotateY = degToRad(90);
+        if (rotateY === -1) console.error("x : " + x + ", z : " + z + "のドアの数字がおかしい");
+
+        let rotation = new THREE.Euler(0, rotateY, 0);
+        this._loadModelDataCreate(DOOR, position, true, null, rotation);
     }
 
     //環境光源の生成
@@ -429,33 +478,45 @@ export class StageScene extends Scene{
 
     //テスト用(1)
     textureToggle (){
-        if (this._toggle.flag){
-            this._textureApply("floor", this._toggle.floor);
-            this._textureApply("wall", this._toggle.wall);
+        if (this._toggle[FLAG]){
+            this._textureApply(FLOOR, this._toggle[FLOOR]);
+            this._textureApply(WALL, this._toggle[WALL]);
         }else{
-            this._textureApply("floor", this._toggle.wall);
-            this._textureApply("wall", this._toggle.floor);
+            this._textureApply(FLOOR, this._toggle[WALL]);
+            this._textureApply(WALL, this._toggle[FLOOR]);
         }
-        this._toggle.flag = !this._toggle.flag;
+        this._toggle[FLAG] = !this._toggle[FLAG];
+    }
+
+    _youModelDataCreate (){
+
     }
 
     //読み込むモデルデータの情報を作成し、保持する
-    _loadModelDataCreate (name, position, isMove = true, scale = new THREE.Vector3(100, 100, 100)){
+    _loadModelDataCreate (name, position, isMove, scale, rotation){
+
+        if (typeof(isMove) !== "boolean") isMove = true;
+        if (!scale) scale = new THREE.Vector3(100, 100, 100);
+        if (!rotation) rotation = new THREE.Euler();
+
+
         //positionからVector3を作成
         let x = position.x * SIDE,
             z = position.z * SIDE;
+
         let vector = new THREE.Vector3(x, 0, z);
 
-        if (name === "you") vector.y = UPPER_LAYER;
-        if (name === "hole") vector.y = -SIDE;
+        if (name === YOU) vector.y = UPPER_LAYER;
+        if (name === HOLE) vector.y = -SIDE;
 
         //読み込むデータの情報をモデルの配列にプッシュ
-        this._loadData.model.push({
-            "url" : MODEL_URLs[name],
+        this._loadData[MODEL].push({
+            [URL] : MODEL_URLs[name],
             "position" : vector,
-            "isMove" : isMove,
+            [IS_MOVE] : isMove,
             "scale" : scale,
-            "flag" : false
+            "rotation" : rotation,
+            [FLAG] : false
         });
     }
 
@@ -463,23 +524,23 @@ export class StageScene extends Scene{
     _loadTextureDataCreate (key, key2){
         //読み込むデータの情報をテクスチャの配列にプッシュ
         typeof(key2) === "number" ?
-        this._loadData.texture.push({
-            "url" : TEXTURE_URLs[key][key2],
+        this._loadData[TEXTURE].push({
+            [URL] : TEXTURE_URLs[key][key2],
             "key" : key,
             "index" : key2,
-            "flag" : false
+            [FLAG] : false
         }):
         key === "background" ?
-        this._loadData.texture.push({
-            "url" : TEXTURE_URLs[key][key2],
+        this._loadData[TEXTURE].push({
+            [URL] : TEXTURE_URLs[key][key2],
             "key" : key,
             "isBG" : true,
-            "flag" : false
+            [FLAG] : false
         }):
-        this._loadData.texture.push({
-            "url" : TEXTURE_URLs[key][key2],
+        this._loadData[TEXTURE].push({
+            [URL] : TEXTURE_URLs[key][key2],
             "key" : key,
-            "flag" : false
+            [FLAG] : false
         });
     }
 
@@ -489,42 +550,42 @@ export class StageScene extends Scene{
         let modelLoader = new GLTFLoader(),
             textureLoader = new THREE.TextureLoader();
 
-        let model = this._loadData.model;
+        let model = this._loadData[MODEL];
 
         //モデルデータの読み込み
         for(let i = 0; i < model.length; i++){
-            modelLoader.load(model[i].url, (gltf) => {
+            modelLoader.load(model[i][URL], (gltf) => {
                 //大きさや配置を反映
                 let obj = gltf.scene;
                 obj.scale.copy(model[i].scale);
                 obj.position.copy(model[i].position);
+                obj.rotation.copy(model[i].rotation);
 
-                console.log(model[i].url, performance.now());
-                model[i].isMove ?
+                model[i][IS_MOVE] ?
                 this._moveObject[i] = obj:
-                this._modelObject.other.push(obj);
+                this._otherObject.push(obj);
 
                 this._scene.add(obj);
 
                 console.log(this._modelObject);
                 //読み込み完了フラグを有効化
-                model[i].flag = true;
+                model[i][FLAG] = true;
                 this._loadComplete(callback);
             });
         }
 
-        let texture = this._loadData.texture;
+        let texture = this._loadData[TEXTURE];
 
         //テスト用(1)
         this._toggle = {
-            "wall" : null,
-            "floor" : null,
-            "flag" : false
+            [WALL] : null,
+            [FLOOR] : null,
+            [FLAG] : false
         };
 
         //テクスチャデータの読み込み
         for(let i = 0; i < texture.length; i++){
-            textureLoader.load(texture[i].url, (tex) => {
+            textureLoader.load(texture[i][URL], (tex) => {
                 //読み込んだテクスチャを適用
                 texture[i].index ?
                 this._textureApply(texture[i].key, tex, texture[i].index):
@@ -532,7 +593,7 @@ export class StageScene extends Scene{
                 this._backgroundTextre = tex:
                 this._textureApply(texture[i].key, tex);
                 //読み込み完了フラグを有効化
-                texture[i].flag = true;
+                texture[i][FLAG] = true;
                 this._loadComplete(callback);
                 //テスト用(1)
                 this._toggle[texture[i].key] = tex;
@@ -543,11 +604,11 @@ export class StageScene extends Scene{
     //モデルやテクスチャの読み込み完了を確認する
     _loadComplete (callback){
         let check = (val) => {
-            return val.flag;
+            return val[FLAG];
         }
 
-        let model = this._loadData.model.every(check);
-        let texture = this._loadData.texture.every(check);
+        let model = this._loadData[MODEL].every(check);
+        let texture = this._loadData[TEXTURE].every(check);
 
         if (model && texture) {
             this._addScene();
