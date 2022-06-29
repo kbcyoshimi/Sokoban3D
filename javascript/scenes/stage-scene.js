@@ -37,7 +37,7 @@ const INDEX = "index";
 const IS_BG = "isBG";
 
 //ステージのテクスチャのデフォルト
-const BACKGROUND_DEFAULT = "Sky";
+const BACKGROUND_DEFAULT = "sky";
 const FLOOR_DEFAULT = "grass";
 const WALL_DEFAULT = "brick";
 const CONVEYOR_DEFAULT = "conveyor";
@@ -270,12 +270,12 @@ export class StageScene extends Scene{
             this._loadTextureDataCreate(FLOOR, FLOOR_DEFAULT);
             this._loadTextureDataCreate(WALL, WALL_DEFAULT);
             if (existsConveyor) this._loadTextureDataCreate(CONVEYOR, CONVEYOR_DEFAULT);
+        }else {
+            if (data[TEXTURE][BACKGROUND]) this._loadTextureDataCreate(BACKGROUND, data[TEXTURE][BACKGROUND]);
+            if (data[TEXTURE][FLOOR]) this._loadTextureDataCreate(FLOOR, data[TEXTURE][FLOOR]);
+            if (data[TEXTURE][WALL]) this._loadTextureDataCreate(WALL, data[TEXTURE][WALL]);
+            if (existsConveyor && data[TEXTURE][CONVEYOR]) this._loadTextureDataCreate(CONVEYOR, data[TEXTURE][CONVEYOR]);
         }
-
-        if (data[TEXTURE][BACKGROUND]) this._loadTextureDataCreate(BACKGROUND, data[TEXTURE][BACKGROUND]);
-        if (data[TEXTURE][FLOOR]) this._loadTextureDataCreate(FLOOR, data[TEXTURE][FLOOR]);
-        if (data[TEXTURE][WALL]) this._loadTextureDataCreate(WALL, data[TEXTURE][WALL]);
-        if (existsConveyor && data[TEXTURE][CONVEYOR]) this._loadTextureDataCreate(CONVEYOR, data[TEXTURE][CONVEYOR])
 
         //テクスチャ情報
         //背景：必須
