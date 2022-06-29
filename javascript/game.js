@@ -588,19 +588,43 @@ export class Game{
 		this._map = Array.from(mapHistory);
 
 		//pieceの手戻り
+		let result = new Array();
+
 		let piecePositions = this._pieceHistories;
 		let player = this._player;
 		player.move(piecePositions[turn]['player'].x, piecePositions[turn]['player'].z);
+		result.push(player.position);
 
 		for(let i = 0; i < this._boxs.length; i++){
 			//console.log(this._pieceHistories[turn])
 			let piece = this._boxs[i];
 			piece.move(piecePositions[turn]['boxs'][i].x, piecePositions[turn]['boxs'][i].z);
+			result.push(piece.position);
 			piece.changeIsDrop(piecePositions[turn]['boxs'][i].isDrop);
 		}
 		console.log((turn) + "ターン目終了時にに戻りました。")
 		this._turn = turn + 1;
 
+		let flags = this.generateBackResult();
+		result = result.concat(flags);
+		
+		//console.log("back result = " + JSON.stringify(result));
+		return result;
+	}
+
+	generateBackResult(){
+		let result = new Array();
+		for(let z = 0; z < this._mapLength; z++){
+			for(let x = 0; x < this._mapLength; x++){
+				let tile = this.getTile(x, z);
+				let species = extract(tile, 5);
+				if(species === 6 || species === 9){
+					let flag = extract(tile, 2);
+					result.push(flag);
+				}
+			}
+		}
+		return result;
 	}
 
 
