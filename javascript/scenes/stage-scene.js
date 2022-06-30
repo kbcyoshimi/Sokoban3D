@@ -7,7 +7,10 @@ import { extract } from "../functions";
 //正方形の1辺の長さ
 const SIDE = 100;
 
-//JSONなどのキー
+//JSONデータやギミックのキー
+const START = "start";
+const MAP = "map";
+const MAP_SIDE = "side";
 const BACKGROUND = "background";
 const YOU = "you";
 const BOX = "box";
@@ -21,6 +24,10 @@ const TELEPORT_EXIT = "exit";
 const HOLE = "hole";
 const DOOR = "door";
 
+//
+const NUMBER = "number";
+const BOOLEAN = "boolean";
+
 //読み込みデータ用のキー
 const MODEL = "model";
 const TEXTURE = "texture";
@@ -30,7 +37,14 @@ const URL = "url";
 const FLAG = "flag";
 
 //モデル読み込みデータで使用するキー
+const NAME = "name";
 const IS_MOVE = "isMove";
+const OPTION = "option";
+//オブジェクトのプロパティ名
+const POSITION = "position";
+const SCALE = "scale";
+const ROTATION = "rotation";
+const COLOR = "color";
 
 //テクスチャ読み込みデータで使用するキー
 const KEY = "key";
@@ -160,16 +174,27 @@ const CIRCLE_DATA = {
 //ドアオブジェクトのデータ
 const DOOR_EW = 5;
 const DOOR_SN = 6;
+const DOOR_MAIN_MESH = "Merged_Objects";
+const DOOR_COLOR = [
+    null,
+    0x326496,//青、赤、黄、緑、紫、オレンジ、ピンク、茶、黒
+    0xff1818,
+    0xfff200,
+    0x0ed145,
+    0xb83dba,
+    0xff7f27,
+    0xffaec8,
+    0xb97a56,
+    0x000000
+];
 
-//プレイヤーオブジェクトの調整用データ
+//オブジェクトのスケール調整用データ
 const YOU_SCALE = new THREE.Vector3(100, 90, 100);
+const OTHER_SCALE = new THREE.Vector3(100, 100, 100);
 
 //最上層(グリッドヘルパー用)と上層(プレイヤーオブジェクトと屋根用)のy座標
 const TOP_LAYER = 999;
 const UPPER_LAYER = 900;
-
-//オブジェクトのプロパティ名
-const POSITION = "position";
 
 //度をラジアンに変換する関数
 const degToRad = THREE.MathUtils.degToRad;
@@ -231,17 +256,17 @@ export class StageScene extends Scene{
         console.log(MODEL_URLs);
 
         //プレイヤーと荷物の情報を生成
-        this._loadModelDataCreate(YOU, data.start, true, YOU_SCALE);   
+        this._youModelDataCreate(data[START]);   
         for(let box of data[BOXS]) {
-            this._loadModelDataCreate(BOX, box);
+            this._boxModelDataCreate(box);
         }
 
         let existsConveyor = false;
 
         //マップデータを使用してオブジェクトの生成や読み込みを行う
-        for(var z = 0; z < data.map.length; z++) {
-            for(var x = 0; x < data.map[z].length; x++) {
-                let id = data.map[z][x];
+        for(var z = 0; z < data[MAP].length; z++) {
+            for(var x = 0; x < data[MAP][z].length; x++) {
+                let id = data[MAP][z][x];
                 switch(extract(id, 5)){
                     case FLOOR_N:
                         this._floorGenerate(x, z, id);
@@ -279,7 +304,7 @@ export class StageScene extends Scene{
         }
         
         this._ambientLightGenerate();
-        this._gridHelperGenerate(data.side);
+        this._gridHelperGenerate(data[MAP_SIDE]);
 
         //テクスチャ読み込み指定
         if (data[TEXTURE] === undefined){
@@ -414,11 +439,13 @@ export class StageScene extends Scene{
 
     }
 
+    //穴の読み込みデータを作成し、読み込みデータ配列に格納する
     _holeGenerate (x, z){
         let position = {"x" : x, "z" : z};
         this._loadModelDataCreate(HOLE, position, false);
     }
 
+    //ドアの読み込みデータを作成し、読み込みデータ配列に格納する
     _doorGenerate (x, z, id){
         let position = {"x" : x, "z" : z};
 
@@ -428,8 +455,12 @@ export class StageScene extends Scene{
         if (index === DOOR_SN) rotateY = degToRad(90);
         if (rotateY === -1) console.error("x : " + x + ", z : " + z + "のドアの数字がおかしい");
 
-        let rotation = new THREE.Euler(0, rotateY, 0);
-        this._loadModelDataCreate(DOOR, position, true, null, rotation);
+        index = extract(id, 1);
+        let color = null;
+        color = DOOR_COLOR[index];
+        if (typeof(color) !== NUMBER) console.error("x : " + x + ", z : " + z + "のドアの数字がおかしい");
+
+        this._doorModelDataCreate(position, rotateY, color);
     }
 
     //環境光源の生成
@@ -521,34 +552,94 @@ export class StageScene extends Scene{
         this._toggle[FLAG] = !this._toggle[FLAG];
     }
 
-    _youModelDataCreate (){
+    //プレイヤーオブジェクトのモデル読み込みデータ作成
+    _youModelDataCreate (position){
+        let x = position.x * SIDE,
+            y = UPPER_LAYER,
+            z = position.z * SIDE;
 
+        let vector = new THREE.Vector3(x, y, z);
+
+        let scale = YOU_SCALE;
+
+        let option = {
+            [POSITION] : vector,
+            [SCALE] : scale
+        }
+
+        this._loadModelDataCreate(YOU, true, option);
     }
 
-    //読み込むモデルデータの情報を作成し、保持する
-    _loadModelDataCreate (name, position, isMove, scale, rotation){
-
-        if (typeof(isMove) !== "boolean") isMove = true;
-        if (!scale) scale = new THREE.Vector3(100, 100, 100);
-        if (!rotation) rotation = new THREE.Euler();
-
-
-        //positionからVector3を作成
+    //箱オブジェクトのモデル読み込みデータ作成
+    _boxModelDataCreate (position){
         let x = position.x * SIDE,
             z = position.z * SIDE;
 
         let vector = new THREE.Vector3(x, 0, z);
 
-        if (name === YOU) vector.y = UPPER_LAYER;
-        if (name === HOLE) vector.y = -SIDE;
+        let scale = OTHER_SCALE;
+
+        let option = {
+            [POSITION] : vector,
+            [SCALE] : scale
+        }
+
+        this._loadModelDataCreate(BOX, true, option);
+    }
+
+    //穴オブジェクトのモデル読み込みデータ作成
+    _holeModelDataCreate (position){
+        let x = position.x * SIDE,
+            y = -SIDE,
+            z = position.z * SIDE;
+
+        let vector = new THREE.Vector3(x, y, z);
+
+        let scale = OTHER_SCALE;
+
+        let option = {
+            [POSITION] : vector,
+            [SCALE] : scale
+        }
+
+        this._loadModelDataCreate(HOLE, false, option);
+    }
+
+    //ドアオブジェクトのモデル読み込みデータ作成
+    _doorModelDataCreate (position, rotateY, colorCode){
+        let x = position.x * SIDE,
+            z = position.z * SIDE;
+
+        let vector = new THREE.Vector3(x, 0, z);
+
+        let scale = OTHER_SCALE;
+
+        let rotation = new THREE.Euler(0, rotateY, 0);
+
+        let color = new THREE.Color(colorCode);
+
+        let option = {
+            [POSITION] : vector,
+            [SCALE] : scale,
+            [ROTATION] : rotation,
+            [COLOR] : color
+        }
+
+        this._loadModelDataCreate(DOOR, true, option);
+    }
+
+    //読み込むモデルデータの情報を作成し、保持する
+    _loadModelDataCreate (name, isMove, option){
+
+        if (!name) console.error("変数nameがおかしい");
+        if (typeof(isMove) !== BOOLEAN) console.error("変数isMoveがおかしい");
 
         //読み込むデータの情報をモデルの配列にプッシュ
         this._loadData[MODEL].push({
+            [NAME] : name,
             [URL] : MODEL_URLs[name],
-            "position" : vector,
-            [IS_MOVE] : isMove,
-            "scale" : scale,
-            "rotation" : rotation,
+            [OPTION] : option,
+            [IS_MOVE] : isMove,       
             [FLAG] : false
         });
     }
@@ -556,23 +647,23 @@ export class StageScene extends Scene{
     //読み込むテクスチャデータの情報を作成し、保持する
     _loadTextureDataCreate (key, key2){
         //読み込むデータの情報をテクスチャの配列にプッシュ
-        typeof(key2) === "number" ?
+        typeof(key2) === NUMBER ?
         this._loadData[TEXTURE].push({
             [URL] : TEXTURE_URLs[key][key2],
-            "key" : key,
-            "index" : key2,
+            [KEY] : key,
+            [INDEX] : key2,
             [FLAG] : false
         }):
-        key === "background" ?
+        key === BACKGROUND ?
         this._loadData[TEXTURE].push({
             [URL] : TEXTURE_URLs[key][key2],
-            "key" : key,
-            "isBG" : true,
+            [KEY] : key,
+            [IS_BG] : true,
             [FLAG] : false
         }):
         this._loadData[TEXTURE].push({
             [URL] : TEXTURE_URLs[key][key2],
-            "key" : key,
+            [KEY] : key,
             [FLAG] : false
         });
     }
@@ -590,9 +681,16 @@ export class StageScene extends Scene{
             modelLoader.load(model[i][URL], (gltf) => {
                 //大きさや配置を反映
                 let obj = gltf.scene;
-                obj.scale.copy(model[i].scale);
-                obj.position.copy(model[i].position);
-                obj.rotation.copy(model[i].rotation);
+                let option = model[i][OPTION];
+
+                Object.keys(option).forEach(key => {
+                    if (model[i][NAME] === DOOR && key === COLOR){
+                        let mesh = obj.getObjectByName(DOOR_MAIN_MESH);
+                        mesh.material.color = option[key];
+                    }else {
+                        obj[key].copy(option[key]);
+                    }
+                })
 
                 model[i][IS_MOVE] ?
                 this._moveObject[i] = obj:
@@ -622,16 +720,16 @@ export class StageScene extends Scene{
         for(let i = 0; i < texture.length; i++){
             textureLoader.load(texture[i][URL], (tex) => {
                 //読み込んだテクスチャを適用
-                texture[i].index ?
-                this._textureApply(texture[i].key, tex, texture[i].index):
-                texture[i].isBG ?
+                texture[i][INDEX] ?
+                this._textureApply(texture[i][KEY], tex, texture[i][INDEX]):
+                texture[i][IS_BG] ?
                 this._backgroundTextre = tex:
-                this._textureApply(texture[i].key, tex);
+                this._textureApply(texture[i][KEY], tex);
                 //読み込み完了フラグを有効化
                 texture[i][FLAG] = true;
                 this._loadComplete(callback);
                 //テスト用(1)
-                this._toggle[texture[i].key] = tex;
+                this._toggle[texture[i][KEY]] = tex;
             }, null, () => {
                 console.log(i);
             });
@@ -683,8 +781,8 @@ export class StageScene extends Scene{
     }
 
     getPosition (code){
-        let x = this._moveObject[code].position.x,
-            z = this._moveObject[code].position.z;
+        let x = this._moveObject[code][POSITION].x,
+            z = this._moveObject[code][POSITION].z;
 
         return {"x" : x, "z" : z};
     }
