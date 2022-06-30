@@ -23,6 +23,10 @@ export class Piece{
 		return this._z;
 	}
 
+	get position (){
+		return {"x" : this._x, "z" : this._z};
+	}
+
 	get isDrop (){
 		return this._isDrop;
 	}
