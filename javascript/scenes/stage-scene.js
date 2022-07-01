@@ -446,7 +446,7 @@ export class StageScene extends Scene{
     //穴の読み込みデータを作成し、読み込みデータ配列に格納する
     _holeGenerate (x, z){
         let position = {"x" : x, "z" : z};
-        this._loadModelDataCreate(HOLE, position, false);
+        this._holeModelDataCreate(position);
     }
 
     //ドアの読み込みデータを作成し、読み込みデータ配列に格納する
