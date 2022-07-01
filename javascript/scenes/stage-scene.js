@@ -24,7 +24,7 @@ const TELEPORT_EXIT = "exit";
 const HOLE = "hole";
 const DOOR = "door";
 
-//
+//型の名前
 const NUMBER = "number";
 const BOOLEAN = "boolean";
 
@@ -123,6 +123,9 @@ const SENSOR_N = 7;
 const HOLE_N = 8;
 const DOOR_N = 9;
 
+//環境光の強さ
+const LIGHT_STRENGTH = 1;
+
 //床オブジェクトのデータ
 const FLOOR_DATA = {
     "geo": () => new THREE.BoxGeometry(SIDE, SIDE, SIDE),
@@ -168,6 +171,7 @@ const CIRCLE_ENTRY = 7;
 const CIRCLE_EXIT = 8;
 const CIRCLE_DATA = {
     "geo": () => new THREE.CircleGeometry(CIRCLE_RADIUS, CIRCLE_SEGMENTS),
+    //マテリアルを共有しない
     "mat": () => new THREE.MeshBasicMaterial()
 }
 
@@ -177,15 +181,15 @@ const DOOR_SN = 6;
 const DOOR_MAIN_MESH = "Merged_Objects";
 const DOOR_COLOR = [
     null,
-    0x326496,//青、赤、黄、緑、紫、オレンジ、ピンク、茶、黒
-    0xff1818,
-    0xfff200,
-    0x0ed145,
-    0xb83dba,
-    0xff7f27,
-    0xffaec8,
-    0xb97a56,
-    0x000000
+    0x326496,//青
+    0xff1818,//赤
+    0xfff200,//黄
+    0x0ed145,//緑
+    0xb83dba,//紫
+    0xff7f27,//オレンジ
+    0xffaec8,//ピンク
+    0xb97a56,//茶
+    0x000000 //黒
 ];
 
 //オブジェクトのスケール調整用データ
@@ -465,7 +469,7 @@ export class StageScene extends Scene{
 
     //環境光源の生成
     _ambientLightGenerate (){
-        let ambientLight = new THREE.AmbientLight(0xFFFFFF, 5);
+        let ambientLight = new THREE.AmbientLight(0xFFFFFF, LIGHT_STRENGTH);
         this._scene.add(ambientLight);
     }
 
@@ -502,42 +506,6 @@ export class StageScene extends Scene{
         index ?
         this._useTextureMaterial[key][index].setValues({map : tex}):
         this._useTextureMaterial[key].setValues({map : tex});
-    }
-
-    //保持したオブジェクトをシーンに追加する
-    _addScene (){
-        //ジオメトリを一つにまとめるオブジェクトのシーン追加
-        let map = this._groupGeometry;
-        Object.keys(map).forEach(key => {
-            let boxes = [];
-            //複数のジオメトリを配列に設定
-            for (let geo of map[key]){
-                boxes.push(geo);
-            }
-
-            if (!boxes.length) return;
-
-            //ジオメトリの配列から一つのジオメトリを作成する
-            let geos = BufferGeometryUtils.mergeBufferGeometries(boxes);
-            let mat = this._useTextureMaterial[key];
-            let mesh = new THREE.Mesh(geos, mat);
-            this.scene.add(mesh);
-        })
-
-        //テレポートのシーン追加
-        let mapTele = this._teleportGeometry;
-        Object.keys(mapTele).forEach(key => {
-            for (let i = 0; i < mapTele[key].length; i++){
-                let geo = mapTele[key][i];
-                if (!geo) continue;
-                let mat = this._useTextureMaterial[key][i];
-                let mesh = new THREE.Mesh(geo, mat);
-                this._scene.add(mesh);
-            }
-        })
-
-        //背景の適用
-        this._scene.background = this._backgroundTextre;
     }
 
     //テスト用(1)
@@ -647,20 +615,22 @@ export class StageScene extends Scene{
     //読み込むテクスチャデータの情報を作成し、保持する
     _loadTextureDataCreate (key, key2){
         //読み込むデータの情報をテクスチャの配列にプッシュ
-        typeof(key2) === NUMBER ?
-        this._loadData[TEXTURE].push({
-            [URL] : TEXTURE_URLs[key][key2],
-            [KEY] : key,
-            [INDEX] : key2,
-            [FLAG] : false
-        }):
-        key === BACKGROUND ?
+
+        if (key === BACKGROUND) 
         this._loadData[TEXTURE].push({
             [URL] : TEXTURE_URLs[key][key2],
             [KEY] : key,
             [IS_BG] : true,
             [FLAG] : false
-        }):
+        });
+        else if (typeof(key2) === NUMBER)
+        this._loadData[TEXTURE].push({
+            [URL] : TEXTURE_URLs[key][key2],
+            [KEY] : key,
+            [INDEX] : key2,
+            [FLAG] : false
+        });
+        else
         this._loadData[TEXTURE].push({
             [URL] : TEXTURE_URLs[key][key2],
             [KEY] : key,
@@ -686,7 +656,7 @@ export class StageScene extends Scene{
                 Object.keys(option).forEach(key => {
                     if (model[i][NAME] === DOOR && key === COLOR){
                         let mesh = obj.getObjectByName(DOOR_MAIN_MESH);
-                        mesh.material.color = option[key];
+                        mesh.material[COLOR] = option[key];
                     }else {
                         obj[key].copy(option[key]);
                     }
@@ -720,11 +690,10 @@ export class StageScene extends Scene{
         for(let i = 0; i < texture.length; i++){
             textureLoader.load(texture[i][URL], (tex) => {
                 //読み込んだテクスチャを適用
-                texture[i][INDEX] ?
-                this._textureApply(texture[i][KEY], tex, texture[i][INDEX]):
-                texture[i][IS_BG] ?
-                this._backgroundTextre = tex:
-                this._textureApply(texture[i][KEY], tex);
+                if      (texture[i][IS_BG]) this._backgroundTextre = tex;
+                else if (texture[i][INDEX]) this._textureApply(texture[i][KEY], tex, texture[i][INDEX]);
+                else                        this._textureApply(texture[i][KEY], tex);
+
                 //読み込み完了フラグを有効化
                 texture[i][FLAG] = true;
                 this._loadComplete(callback);
@@ -749,6 +718,49 @@ export class StageScene extends Scene{
             this._addScene();
             callback();
         }
+    }
+
+    //保持したオブジェクトをシーンに追加する
+    _addScene (){
+        //ジオメトリを一つにまとめるオブジェクトのシーン追加
+        let map = this._groupGeometry;
+        Object.keys(map).forEach(key => {
+            let boxes = [];
+            //複数のジオメトリを配列に設定
+            for (let geo of map[key]){
+                boxes.push(geo);
+            }
+
+            if (!boxes.length) return;
+
+            //ジオメトリの配列から一つのジオメトリを作成する
+            let geos = BufferGeometryUtils.mergeBufferGeometries(boxes);
+            let mat = this._useTextureMaterial[key];
+            let mesh = new THREE.Mesh(geos, mat);
+            this.scene.add(mesh);
+        })
+
+        //テレポートのシーン追加
+        let mapTele = this._teleportGeometry;
+        Object.keys(mapTele).forEach(key => {
+            for (let i = 0; i < mapTele[key].length; i++){
+                let geo = mapTele[key][i];
+                if (!geo) continue;
+                let mat = this._useTextureMaterial[key][i];
+                let mesh = new THREE.Mesh(geo, mat);
+                this._scene.add(mesh);
+            }
+        })
+
+        // let obj = this._moveObject;
+        // for (let i = 0; i < obj.length; i++){
+        //     let mesh = obj[i].getObjectByName(DOOR_MAIN_MESH);
+        //     if (mesh) console.log(mesh.material);
+        //     else console.log(obj[i]);
+        // }
+
+        //背景の適用
+        this._scene.background = this._backgroundTextre;
     }
 
     //対応するオブジェクトに受け取ったデータを適用する
