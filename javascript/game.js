@@ -56,6 +56,12 @@ export class Game{
 		this._turn = 1;
 	}
 
+	get orgData(){
+		let result = JSON.parse(JSON.stringify(this._orgData));
+
+		return result;
+	}
+
 	//プレイヤーがどの方向に動けるかチェック
 	moveCheck(){
 		let x = this._player.x;
