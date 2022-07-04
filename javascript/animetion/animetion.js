@@ -12,12 +12,16 @@ const MOVE = "move";
 const TELEPORT = "teleport";
 
 const PUSH = "push";
+const PUSH_VALUE = -30;
 
 const PULL = "pull";
+const PULL_VALUE = 30;
 
 const OPEN = "open";
+const OPEN_VALUE = -101;
 
 const CLOSE = "close";
+const CLOSE_VALUE = 101;
 
 const FALL = "fall";
 const FALL_VALUE = -90;
@@ -59,6 +63,18 @@ export class Animation{
                     case TELEPORT :
                         this._moveInit(data, i, j);
                         break;
+                    case PUSH :
+                        this._switchAndDoorInit(data, PUSH_VALUE);
+                        break;
+                    case PULL :
+                        this._switchAndDoorInit(data, PULL_VALUE);
+                        break;
+                    case OPEN :
+                        this._switchAndDoorInit(data, OPEN_VALUE);
+                        break;
+                    case CLOSE :
+                        this._switchAndDoorInit(data, CLOSE_VALUE);
+                        break;
                     case FALL :
                         this._fallInit(data, i, j);
                         break
@@ -79,13 +95,19 @@ export class Animation{
         //先頭のデータのとき、現在位置を問い合わせて移動前座標に設定する
         j ?
         data.position = this._target[i][j - 1].destination:
-        data.position = this._tell(i);
+        data.position = this._tell.position(i);
 
         //移動距離の計算
         let x = data.destination.x - data.position.x;
         let z = data.destination.z - data.position.z;
         
         data.distance = {"x" : x, "z" : z};
+    }
+
+    _switchAndDoorInit (data, value){
+        data.position.x *= SIDE;
+        data.position.z *= SIDE;
+        data.distance = {"y" : value};
     }
 
     _fallInit (data, i, j){
@@ -124,6 +146,39 @@ export class Animation{
         return this._progressTime >= REQUIERD_TIME;
     }
 
+    codeCheck (i){
+        if (!this._target[i].length) return null;
+
+        let data = this._target[i][0];
+        if (data === null) return null;
+
+        let result = i;
+
+        switch (data.key){
+            case PUSH :
+            case PULL :
+                result = this._switchCodeCheck(data);
+                break;
+            case OPEN :
+            case CLOSE :
+                result = this._doorCodeCheck(data);
+                break;
+            default :
+        }
+
+        return result;
+    }
+
+    _switchCodeCheck (data){
+        let code = this._tell.code(data.position, "switch");
+        return code;
+    }
+
+    _doorCodeCheck (data){
+        let code = this._tell.code(data.position, "door");
+        return code;
+    }
+
     distanceCalc (i){
         if (!this._target[i].length) return null;
 
@@ -135,10 +190,19 @@ export class Animation{
         switch (data.key){
             case MOVE :
             case TELEPORT :
-                result = this._moveCalc(data);
+                result = this._X_Z_Calc(data);
+                break;
+            case PUSH : 
+            case PULL :
+                break;
+            case OPEN :
+                result = this._Y_down_Calc(data);
+                break;
+            case CLOSE :
+                result = this._Y_up_Calc(data, OPEN_VALUE);
                 break;
             case FALL :
-                result = this._fallCalc(data);
+                result = this._Y_down_Calc(data);
                 break
             default :
         }
@@ -146,7 +210,7 @@ export class Animation{
         return result;
     }
 
-    _moveCalc (data){
+    _X_Z_Calc (data){
         //アニメーション開始時から移動しておくべき距離
         let progressX = data.distance.x * this._progressRate,
             progressZ = data.distance.z * this._progressRate;
@@ -163,7 +227,22 @@ export class Animation{
         }
     }
 
-    _fallCalc (data){
+    _Y_up_Calc (data, correction){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY + correction,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            "propertys" : [POSITION],
+            "values" : [value]
+        }
+    }
+
+    _Y_down_Calc (data){
         let progressY = data.distance.y * this._progressRate;
 
         let x = data.position.x,
@@ -190,17 +269,27 @@ export class Animation{
         switch (data.key){
             case MOVE :
             case TELEPORT :
-                result = this._moveLast(data);
+                result = this._X_Z_Last(data);
+                break;
+            case PUSH : 
+            case PULL :
+                break;
+            case OPEN :
+                result = this._Y_down_Last(data);
+                break;
+            case CLOSE :
+                result = this._Y_up_Last(data, OPEN_VALUE);
                 break;
             case FALL :
-                result = this._fallLast(data);
+                result = this._Y_down_Last(data);
+                break;
             default :
         }
 
         return result;
     }
 
-    _moveLast(data) {
+    _X_Z_Last(data) {
         let x = data.destination.x,
             z = data.destination.z;
 
@@ -212,14 +301,25 @@ export class Animation{
         }
     }
 
-    _fallLast(data) {
+    _Y_up_Last(data, correction) {
+        let x = data.position.x,
+            y = data.distance.y + correction,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            "propertys" : [POSITION],
+            "values" : [value]
+        }
+    }
+
+    _Y_down_Last(data) {
         let x = data.position.x,
             y = data.distance.y,
             z = data.position.z;
 
         let value = new THREE.Vector3(x, y, z);
-
-        console.log(data);
 
         return {
             "propertys" : [POSITION],

@@ -47,6 +47,9 @@ const SCALE = "scale";
 const ROTATION = "rotation";
 const COLOR = "color";
 
+//
+const CODE = "code";
+
 //テクスチャ読み込みデータで使用するキー
 const KEY = "key";
 const INDEX = "index";
@@ -185,8 +188,8 @@ const DOOR_EW = 5;
 const DOOR_SN = 6;
 const DOOR_MAIN_MESH = "Merged_Objects";
 
-//ドアとスイッチの色
-const DOOR_AND_SWITCH_COLOR = [
+//スイッチとドアの色
+const SWITCH_AND_DOOR_COLOR = [
     null,
     0x326496,//青
     0xff1818,//赤
@@ -449,7 +452,7 @@ export class StageScene extends Scene{
 
         let index = extract(id, 1);
         let color = null;
-        color = DOOR_AND_SWITCH_COLOR[index];
+        color = SWITCH_AND_DOOR_COLOR[index];
         if (typeof(color) !== NUMBER) console.error("x : " + x + ", z : " + z + "のスイッチの数字がおかしい");
 
         this._switchModelDataCreate(position, color);
@@ -477,7 +480,7 @@ export class StageScene extends Scene{
 
         index = extract(id, 1);
         let color = null;
-        color = DOOR_AND_SWITCH_COLOR[index];
+        color = SWITCH_AND_DOOR_COLOR[index];
         if (typeof(color) !== NUMBER) console.error("x : " + x + ", z : " + z + "のドアの数字がおかしい");
 
         this._doorModelDataCreate(position, rotateY, color);
@@ -708,7 +711,6 @@ export class StageScene extends Scene{
 
                 this._scene.add(obj);
 
-                console.log(this._modelObject);
                 //読み込み完了フラグを有効化
                 model[i][FLAG] = true;
                 this._loadComplete(callback);
@@ -755,6 +757,7 @@ export class StageScene extends Scene{
         let texture = this._loadData[TEXTURE].every(check);
 
         if (model && texture) {
+            console.log(this._moveObject);
             this._addScene();
             callback();
         }
@@ -805,6 +808,7 @@ export class StageScene extends Scene{
 
     //対応するオブジェクトに受け取ったデータを適用する
     move (code, data){
+        if (code === null) return;
         if (data === null) return;
 
         //キーと対応する値を取得する
@@ -832,11 +836,34 @@ export class StageScene extends Scene{
         }
     }
 
+    getMoveCode (position, name){
+        let result = null;
+        let x = position.x,
+            z = position.z;
+        
+        let objs = this._moveObject;
+        for (let i = 0; i < objs.length; i++){
+            let obj = objs[i];
+            if (!obj) continue;
+            if (obj[NAME] !== name) continue;
+            if (obj[POSITION].x === x && obj[POSITION].z === z) return i;
+        }
+
+        return result;
+    }
+
     getPosition (code){
         let x = this._moveObject[code][POSITION].x,
             z = this._moveObject[code][POSITION].z;
 
         return {"x" : x, "z" : z};
+    }
+
+    get tell (){
+        return {
+            [POSITION] : this.getPosition.bind(this),
+            [CODE] : this.getMoveCode.bind(this)
+        }
     }
 
     get you (){

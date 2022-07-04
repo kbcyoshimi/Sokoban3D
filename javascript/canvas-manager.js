@@ -103,7 +103,7 @@ export class CanvasManager{
 
             let target = this._game.move(direction);
             target = JSON.parse(JSON.stringify(target));
-            let tell = this._world.getPosition.bind(this._world);
+            let tell = this._world.tell;
 
             this._animetionRequest = new Animation(target, tell);
             this._animetionRequest.init();
@@ -144,9 +144,10 @@ export class CanvasManager{
 
         if (req.isWrapEnd()){
             for (let i = 0; i < req.getLength(); i++){
+                let index = req.codeCheck(i);
                 let data = req.wrapLast(i);
-                this._world.move(i, data);
-                if (i === 0 && data !== null) this._main.setCamera(data.values[0]);
+                this._world.move(index, data);
+                if (index === 0 && data !== null) this._main.setCamera(data.values[0]);
             }
             if (req.isNext()){
                 req.next();
@@ -156,9 +157,10 @@ export class CanvasManager{
             }
         }else {
             for (let i = 0; i < req.getLength(); i++){
+                let index = req.codeCheck(i);
                 let data = req.distanceCalc(i);
-                this._world.move(i, data);
-                if (i === 0 && data !== null) this._main.setCamera(data.values[0]);
+                this._world.move(index, data);
+                if (index === 0 && data !== null) this._main.setCamera(data.values[0]);
             }
         }
     }
