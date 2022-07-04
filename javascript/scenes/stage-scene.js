@@ -21,6 +21,7 @@ const WALL = "wall";
 const CONVEYOR = "conveyor";
 const TELEPORT_ENTRY = "entry";
 const TELEPORT_EXIT = "exit";
+const SWITCH = "switch";
 const HOLE = "hole";
 const DOOR = "door";
 
@@ -64,7 +65,8 @@ const MODEL_URLs = {
     [YOU] : "model/you.glb",
     [BOX] : "model/box.glb",
     [HOLE] : "model/hole.glb",
-    [DOOR] : "model/door.glb"
+    [DOOR] : "model/door.glb",
+    [SWITCH] : "model/switch.glb"
 }
 
 //テクスチャのurl
@@ -175,11 +177,16 @@ const CIRCLE_DATA = {
     "mat": () => new THREE.MeshBasicMaterial()
 }
 
+//スイッチオブジェクトのデータ
+const SWITCH_MAIN_MESH = "KNOP_BOVEN";
+
 //ドアオブジェクトのデータ
 const DOOR_EW = 5;
 const DOOR_SN = 6;
 const DOOR_MAIN_MESH = "Merged_Objects";
-const DOOR_COLOR = [
+
+//ドアとスイッチの色
+const DOOR_AND_SWITCH_COLOR = [
     null,
     0x326496,//青
     0xff1818,//赤
@@ -277,6 +284,7 @@ export class StageScene extends Scene{
                         break;
                     case WALL_N:
                         this._wallGenerate(x, z);
+                        this._floorGenerate(x, z);
                         break;
                     case TUNNEL_N:
                         this._tunnelGenerate(x, z);
@@ -291,6 +299,7 @@ export class StageScene extends Scene{
                         this._floorGenerate(x, z);
                         break;
                     case SWITCH_N:
+                        this._switchGenerate(x, z, id);
                         break;
                     case SENSOR_N:
                         break;
@@ -435,8 +444,15 @@ export class StageScene extends Scene{
         }
     }
 
-    _switchGenerate (x, z){
-        
+    _switchGenerate (x, z, id){
+        let position = {"x" : x, "z" : z};
+
+        let index = extract(id, 1);
+        let color = null;
+        color = DOOR_AND_SWITCH_COLOR[index];
+        if (typeof(color) !== NUMBER) console.error("x : " + x + ", z : " + z + "のスイッチの数字がおかしい");
+
+        this._switchModelDataCreate(position, color);
     }
 
     _sensorGenerate (x, z){
@@ -461,7 +477,7 @@ export class StageScene extends Scene{
 
         index = extract(id, 1);
         let color = null;
-        color = DOOR_COLOR[index];
+        color = DOOR_AND_SWITCH_COLOR[index];
         if (typeof(color) !== NUMBER) console.error("x : " + x + ", z : " + z + "のドアの数字がおかしい");
 
         this._doorModelDataCreate(position, rotateY, color);
@@ -553,6 +569,27 @@ export class StageScene extends Scene{
         }
 
         this._loadModelDataCreate(BOX, true, option);
+    }
+
+    //スイッチオブジェクトのモデル読み込みデータ作成
+    _switchModelDataCreate (position, colorCode){
+        let x = position.x * SIDE,
+            y = -SIDE,
+            z = position.z * SIDE;
+
+        let vector = new THREE.Vector3(x, y, z);
+
+        let scale = OTHER_SCALE;
+
+        let color = new THREE.Color(colorCode);
+
+        let option = {
+            [POSITION] : vector,
+            [SCALE] : scale,
+            [COLOR] : color
+        }
+
+        this._loadModelDataCreate(SWITCH, true, option);
     }
 
     //穴オブジェクトのモデル読み込みデータ作成
@@ -656,6 +693,9 @@ export class StageScene extends Scene{
                 Object.keys(option).forEach(key => {
                     if (model[i][NAME] === DOOR && key === COLOR){
                         let mesh = obj.getObjectByName(DOOR_MAIN_MESH);
+                        mesh.material[COLOR] = option[key];
+                    }else if (model[i][NAME] === SWITCH && key === COLOR){
+                        let mesh = obj.getObjectByName(SWITCH_MAIN_MESH);
                         mesh.material[COLOR] = option[key];
                     }else {
                         obj[key].copy(option[key]);
