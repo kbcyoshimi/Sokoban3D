@@ -545,20 +545,33 @@ export class Game{
 	generateAnimationP(key, x, z){
 		let template = {
 			"key" : key,
-			"order" : (z * 100) + x
+			"position" : {
+				"x" : x,
+				"z" : z
+			}
 		}
 		this._preparedAnimation.push([null, template]);
 	}
 
 	//preparedAnimationを変換する関数
 	convertAnimation(){
-		this._preparedAnimation.sort((a, b) => {
-			if(a.order < b.order) return -1;
-			if(a.order > b.order) return 1;
-			return 0;
-		});
-		//console.log(this._preparedAnimation);
+		//console.log(JSON.parse(JSON.stringify(this._preparedAnimation)));
+		
+		//this._preparedAnimation = 
+
+		// this._preparedAnimation.sort((a, b) => {
+		// 	if(a.order < b.order) return -1;
+		// 	if(a.order > b.order) return 1;
+		// 	return 0;
+		// });
+
+		//this._preparedAnimation.sort((a, b) => b.order - a.order || b.order - a.order);
+		
+		//console.log(JSON.parse(JSON.stringify(this._preparedAnimation)));
+
 		this._animation = this._animation.concat(this._preparedAnimation);
+
+		//console.log(JSON.parse(JSON.stringify(this._animation)))
 	}
 
 	//履歴にpiece達の座標情報を追加する関数
