@@ -6,16 +6,20 @@ const SIDE = 100;
 //1ラップの所要時間
 const REQUIERD_TIME = 100;
 
-//アニメーションの種類とプロパティ名
+//キー
+const PROPERTYS = "propertys";
+const VALUES = "values";
+
+//アニメーションの種類と値
 const MOVE = "move";
 
 const TELEPORT = "teleport";
 
 const PUSH = "push";
-const PUSH_VALUE = -30;
+const PUSH_VALUE = 40;
 
 const PULL = "pull";
-const PULL_VALUE = 30;
+const PULL_VALUE = -40;
 
 const OPEN = "open";
 const OPEN_VALUE = -101;
@@ -26,7 +30,11 @@ const CLOSE_VALUE = 101;
 const FALL = "fall";
 const FALL_VALUE = -90;
 
-const POSITION = "position"
+//プロパティ名
+const POSITION = "position";
+const STATE = "state";
+const STATE_UP = 2;
+const STATE_DOWN = 1;
  
 export class Animation{
 
@@ -61,19 +69,19 @@ export class Animation{
                 switch (data.key) {
                     case MOVE :
                     case TELEPORT :
-                        this._moveInit(data, i, j);
+                        this._X_Z_Init(data, i, j);
                         break;
                     case PUSH :
-                        this._switchAndDoorInit(data, PUSH_VALUE);
+                        this._switchInit(data, PUSH_VALUE);
                         break;
                     case PULL :
-                        this._switchAndDoorInit(data, PULL_VALUE);
+                        this._switchInit(data, PULL_VALUE);
                         break;
                     case OPEN :
-                        this._switchAndDoorInit(data, OPEN_VALUE);
+                        this._doorInit(data, OPEN_VALUE);
                         break;
                     case CLOSE :
-                        this._switchAndDoorInit(data, CLOSE_VALUE);
+                        this._doorInit(data, CLOSE_VALUE);
                         break;
                     case FALL :
                         this._fallInit(data, i, j);
@@ -86,7 +94,7 @@ export class Animation{
     }
 
     //移動前座標と移動先座標から移動距離を計算し、設定する
-    _moveInit (data, i, j){
+    _X_Z_Init (data, i, j){
         //スケールをオブジェクトの大きさに合わせる
         data.destination.x *= SIDE;
         data.destination.z *= SIDE;
@@ -104,7 +112,16 @@ export class Animation{
         data.distance = {"x" : x, "z" : z};
     }
 
-    _switchAndDoorInit (data, value){
+    _switchInit (data, value){
+        data.position.x *= SIDE;
+        data.position.z *= SIDE;
+
+        data.group = this._tell.position(this._switchCodeCheck(data), true);
+
+        data.distance = {"y" : value};
+    }
+
+    _doorInit (data, value){
         data.position.x *= SIDE;
         data.position.z *= SIDE;
         data.distance = {"y" : value};
@@ -192,17 +209,20 @@ export class Animation{
             case TELEPORT :
                 result = this._X_Z_Calc(data);
                 break;
-            case PUSH : 
+            case PUSH :
+                result = this._pushCalc(data);
+                break;
             case PULL :
+                result = this._pullCalc(data);
                 break;
             case OPEN :
-                result = this._Y_down_Calc(data);
+                result = this._openCalc(data, 0);
                 break;
             case CLOSE :
-                result = this._Y_up_Calc(data, OPEN_VALUE);
+                result = this._closeCalc(data, OPEN_VALUE);
                 break;
             case FALL :
-                result = this._Y_down_Calc(data);
+                result = this._fall_Calc(data);
                 break
             default :
         }
@@ -222,12 +242,42 @@ export class Animation{
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
         }
     }
 
-    _Y_up_Calc (data, correction){
+    _pushCalc (data){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY + data.group.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        }
+    }
+
+    _pullCalc (data){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY + data.group.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        }
+    }
+
+    _openCalc (data, correction){
         let progressY = data.distance.y * this._progressRate;
 
         let x = data.position.x,
@@ -237,12 +287,27 @@ export class Animation{
         let value = new THREE.Vector3(x, y, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
         }
     }
 
-    _Y_down_Calc (data){
+    _closeCalc (data, correction){
+        let progressY = data.distance.y * this._progressRate;
+
+        let x = data.position.x,
+            y = progressY + correction,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        }
+    }
+
+    _fall_Calc (data){
         let progressY = data.distance.y * this._progressRate;
 
         let x = data.position.x,
@@ -252,8 +317,8 @@ export class Animation{
         let value = new THREE.Vector3(x, y, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
         }
     }
 
@@ -272,16 +337,19 @@ export class Animation{
                 result = this._X_Z_Last(data);
                 break;
             case PUSH : 
+                result = this._pushLast(data);
+                break;
             case PULL :
+                result = this._pullLast(data);
                 break;
             case OPEN :
-                result = this._Y_down_Last(data);
+                result = this._openLast(data, 0);
                 break;
             case CLOSE :
-                result = this._Y_up_Last(data, OPEN_VALUE);
+                result = this._closeLast(data, OPEN_VALUE);
                 break;
             case FALL :
-                result = this._Y_down_Last(data);
+                result = this._fall_Last(data);
                 break;
             default :
         }
@@ -289,19 +357,45 @@ export class Animation{
         return result;
     }
 
-    _X_Z_Last(data) {
+    _X_Z_Last (data){
         let x = data.destination.x,
             z = data.destination.z;
 
         let value = new THREE.Vector3(x, 0, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
         }
     }
 
-    _Y_up_Last(data, correction) {
+    _pushLast (data){
+        let x = data.position.x,
+            y = data.distance.y + data.group.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION, STATE],
+            [VALUES] : [value, STATE_DOWN]
+        }
+    }
+
+    _pullLast (data){
+        let x = data.position.x,
+            y = data.distance.y + data.group.y,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION, STATE],
+            [VALUES] : [value, STATE_UP]
+        }
+    }
+
+    _openLast (data, correction){
         let x = data.position.x,
             y = data.distance.y + correction,
             z = data.position.z;
@@ -309,12 +403,25 @@ export class Animation{
         let value = new THREE.Vector3(x, y, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION, STATE],
+            [VALUES] : [value, STATE_DOWN]
         }
     }
 
-    _Y_down_Last(data) {
+    _closeLast (data, correction){
+        let x = data.position.x,
+            y = data.distance.y + correction,
+            z = data.position.z;
+
+        let value = new THREE.Vector3(x, y, z);
+
+        return {
+            [PROPERTYS] : [POSITION, STATE],
+            [VALUES] : [value, STATE_UP]
+        }
+    }
+
+    _fall_Last (data){
         let x = data.position.x,
             y = data.distance.y,
             z = data.position.z;
@@ -322,8 +429,8 @@ export class Animation{
         let value = new THREE.Vector3(x, y, z);
 
         return {
-            "propertys" : [POSITION],
-            "values" : [value]
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
         }
     }
 

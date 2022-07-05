@@ -9,6 +9,16 @@ import { TitleScene } from "./scenes/title-scene";
 //正方形の1辺の長さ
 const SIDE = 100;
 
+const NUMBER = "number";
+
+const KEY = "key";
+
+const MOVE = "move";
+
+const DESTINATION = "destination";
+
+const POSITION = "position";
+
 export class CanvasManager{
     
     _world;
@@ -21,6 +31,7 @@ export class CanvasManager{
     _stage;
 
     _animetionRequest = null;
+    _tell = null;
     _waiting = false;
     _way;
 
@@ -94,6 +105,8 @@ export class CanvasManager{
         this._map.startStageMode(data);
         this._manual.startStageMode(data);
 
+        this._tell = this._world.tell;
+
         this._way = this._game.moveCheck();
         this._waiting = false;
     }
@@ -103,9 +116,8 @@ export class CanvasManager{
 
             let target = this._game.move(direction);
             target = JSON.parse(JSON.stringify(target));
-            let tell = this._world.tell;
 
-            this._animetionRequest = new Animation(target, tell);
+            this._animetionRequest = new Animation(target, this._tell);
             this._animetionRequest.init();
 
             this._waiting = true;
@@ -121,8 +133,42 @@ export class CanvasManager{
     }
 
     _turnBack (){
-        this._game.back();
-        this._way = this._game.moveCheck();
+        let target = this._game.back();
+
+        let newTarget = [];
+        for (let i = 0; i < target.length; i++){
+            if (typeof(target[i]) !== NUMBER){
+                let last = target[i];
+                let now = this._world.getPosition(i);
+                let x = last.x * SIDE,
+                    z = last.z * SIDE;
+
+                if (x !== now.x || z !== now.z) newTarget[i] = [{[DESTINATION] : last, [KEY] : MOVE}];
+                else newTarget[i] = [];
+            } else{
+                if (target[i] !== this._world.getState(i)){
+                    let position = this._world.getPosition(i);
+                    position.x /= SIDE;
+                    position.z /= SIDE;
+
+                    let order = this._world.getOrder(i, target[i]);
+                    newTarget.push([
+                        null,
+                        {
+                            [KEY] : order,
+                            [POSITION] : position
+                        }
+                    ])
+                }
+            }
+        }
+
+        this._animetionRequest = new Animation(newTarget, this._tell);
+        this._animetionRequest.init();
+
+        this._waiting = true;
+        
+        this._turnEnd();
     }
 
     _stageRestart (){

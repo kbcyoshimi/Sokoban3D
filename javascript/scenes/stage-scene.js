@@ -46,6 +46,9 @@ const POSITION = "position";
 const SCALE = "scale";
 const ROTATION = "rotation";
 const COLOR = "color";
+//オブジェクトのプロパティ名（特殊）
+const STATE = "state";
+const STATE_INIT = 2;
 
 //
 const CODE = "code";
@@ -182,11 +185,22 @@ const CIRCLE_DATA = {
 
 //スイッチオブジェクトのデータ
 const SWITCH_MAIN_MESH = "KNOP_BOVEN";
+const SWITCH_MAIN_GROUP = "Group_2";
+const SWITCH_ORDER = [
+    null,
+    "push",
+    "pull"
+];
 
 //ドアオブジェクトのデータ
 const DOOR_EW = 5;
 const DOOR_SN = 6;
 const DOOR_MAIN_MESH = "Merged_Objects";
+const DOOR_ORDER = [
+    null,
+    "open",
+    "close"
+];
 
 //スイッチとドアの色
 const SWITCH_AND_DOOR_COLOR = [
@@ -693,6 +707,8 @@ export class StageScene extends Scene{
                 let obj = gltf.scene;
                 let option = model[i][OPTION];
 
+                if (model[i][NAME] === DOOR || model[i][NAME] === SWITCH) obj[STATE] = STATE_INIT;
+
                 Object.keys(option).forEach(key => {
                     if (model[i][NAME] === DOOR && key === COLOR){
                         let mesh = obj.getObjectByName(DOOR_MAIN_MESH);
@@ -708,8 +724,6 @@ export class StageScene extends Scene{
                 model[i][IS_MOVE] ?
                 this._moveObject[i] = obj:
                 this._otherObject.push(obj);
-
-                this._scene.add(obj);
 
                 //読み込み完了フラグを有効化
                 model[i][FLAG] = true;
@@ -795,12 +809,21 @@ export class StageScene extends Scene{
             }
         })
 
-        // let obj = this._moveObject;
-        // for (let i = 0; i < obj.length; i++){
-        //     let mesh = obj[i].getObjectByName(DOOR_MAIN_MESH);
-        //     if (mesh) console.log(mesh.material);
-        //     else console.log(obj[i]);
-        // }
+        let objs = this._moveObject;
+        for (let i = 0; i < objs.length; i++){
+            let obj = objs[i];
+            if (!obj) {
+                objs.splice(i, 1);
+                i -= 1;
+            } else{
+                this._scene.add(obj);
+            }
+        }
+
+        objs = this._otherObject;
+        for (let obj of objs){
+            this._scene.add(obj);
+        }
 
         //背景の適用
         this._scene.background = this._backgroundTextre;
@@ -819,17 +842,28 @@ export class StageScene extends Scene{
         if (propertys.length !== values.length) console.warn("キーと値の数が一致していません。");
         let length = Math.min(propertys.length, values.length);
 
+        let obj = this._moveObject[code];
+
         //キーに応じた代入方法で値を適用する
         for (let i = 0; i < length; i++){
             let property = propertys[i];
             switch (property){
                 case POSITION :
                     if (code === 0){
-                        this._moveObject[code][POSITION].x = values[i].x;
-                        this._moveObject[code][POSITION].z = values[i].z;
+                        obj[POSITION].x = values[i].x;
+                        obj[POSITION].z = values[i].z;
                     }else {
-                        this._moveObject[code][POSITION].copy(values[i]);
+                        if (obj[NAME] === SWITCH) {
+                            let group = obj.getObjectByName(SWITCH_MAIN_GROUP);
+                            //y座標をx座標として代入
+                            group[POSITION].x = values[i].y;
+                        }else {
+                            obj[POSITION].copy(values[i]);
+                        }
                     }
+                    break;
+                case STATE :
+                    obj[STATE] = values[i];
                     break;
                 default:
             }
@@ -852,11 +886,29 @@ export class StageScene extends Scene{
         return result;
     }
 
-    getPosition (code){
-        let x = this._moveObject[code][POSITION].x,
-            z = this._moveObject[code][POSITION].z;
+    getPosition (code, isGroup){
+        if (isGroup){
+            let group = this._moveObject[code].getObjectByName(SWITCH_MAIN_GROUP);
+            //x座標をy座標として取得
+            let XtoY = group[POSITION].x;
+            return {"y" : XtoY};
+        }else {
+            let x = this._moveObject[code][POSITION].x,
+                z = this._moveObject[code][POSITION].z;
 
-        return {"x" : x, "z" : z};
+            return {"x" : x, "z" : z};
+        }
+    }
+
+    getState (code){
+        return this._moveObject[code][STATE];
+    }
+
+    getOrder (code, state){
+        let obj = this._moveObject[code];
+        if (obj[NAME] === SWITCH) return SWITCH_ORDER[state];
+        if (obj[NAME] === DOOR) return DOOR_ORDER[state];
+        return null;
     }
 
     get tell (){
