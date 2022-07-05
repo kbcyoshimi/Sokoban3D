@@ -46,6 +46,8 @@ const POSITION = "position";
 const SCALE = "scale";
 const ROTATION = "rotation";
 const COLOR = "color";
+const TRANSPARENT = "transparent";
+const OPACITY = "opacity";
 //オブジェクトのプロパティ名（特殊）
 const STATE = "state";
 const STATE_INIT = 2;
@@ -133,6 +135,26 @@ const DOOR_N = 9;
 
 //環境光の強さ
 const LIGHT_STRENGTH = 1;
+
+//プレイヤーオブジェクトのデータ
+const YOU_NEAR = [
+    {"x" : -SIDE, "z" : 0},
+    {"x" : -SIDE, "z" : -SIDE},
+    {"x" : 0, "z" : -SIDE},
+    {"x" : SIDE, "z" : -SIDE},
+    {"x" : SIDE, "z" : 0},
+    {"x" : SIDE, "z" : SIDE},
+    {"x" : 0, "z" : SIDE},
+    {"x" : -SIDE, "z" : SIDE},
+];
+
+//荷物のデータ
+const BOX_MESH = [
+    "Box_4",
+    "Box_&_Box_1_&_Box_2_&_Box_3"
+];
+const BOX_FALL_Y = -90;
+const BOX_OPACITY = 0.5;
 
 //床オブジェクトのデータ
 const FLOOR_DATA = {
@@ -827,6 +849,45 @@ export class StageScene extends Scene{
 
         //背景の適用
         this._scene.background = this._backgroundTextre;
+    }
+
+    //プレイヤー周辺の荷物を半透明にする
+    youNearCheck (){
+        let position = this.getPosition(0);
+
+        let objs = this._moveObject;
+        let boxes = [];
+        for (let i = 0; i < objs.length; i++){
+            let obj = objs[i];
+            if (!obj) continue;
+            if (obj[NAME] === BOX) boxes.push(i);
+        }
+
+        let codes = [];
+        for (let diff of YOU_NEAR){
+            let x = position.x + diff.x,
+                z = position.z + diff.z;
+            let code = this.getMoveCode({"x" : x, "z" : z}, BOX);
+            if (code) {
+                if (this._moveObject[code][POSITION].y !== BOX_FALL_Y) codes.push(code);
+            };
+        }
+
+        for (let i = 0; i < boxes.length; i++){
+            if (codes.includes(i + 1)){
+                for (let boxMeshName of BOX_MESH){
+                    let mesh = this._moveObject[i + 1].getObjectByName(boxMeshName);
+                    mesh.material[TRANSPARENT] = true;
+                    mesh.material[OPACITY] = BOX_OPACITY;
+                }
+            }else {
+                for (let boxMeshName of BOX_MESH){
+                    let mesh = this._moveObject[i + 1].getObjectByName(boxMeshName);
+                    mesh.material[TRANSPARENT] = true;
+                    mesh.material[OPACITY] = 1;
+                }
+            }
+        }
     }
 
     //対応するオブジェクトに受け取ったデータを適用する

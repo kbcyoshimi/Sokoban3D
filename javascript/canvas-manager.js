@@ -107,6 +107,8 @@ export class CanvasManager{
 
         this._tell = this._world.tell;
 
+        this._world.youNearCheck();
+
         this._way = this._game.moveCheck();
         this._waiting = false;
     }
@@ -199,6 +201,7 @@ export class CanvasManager{
                 req.next();
             }else {
                 this._animetionRequest = null;
+                this._world.youNearCheck();
                 this._waiting = false;
             }
         }else {
