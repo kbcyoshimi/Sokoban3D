@@ -19,6 +19,8 @@ const DESTINATION = "destination";
 
 const POSITION = "position";
 
+const STATE_INIT = 2;
+
 export class CanvasManager{
     
     _world;
@@ -87,8 +89,6 @@ export class CanvasManager{
                 break;
             case "r" :
                 this._stageRestart();
-                //テスト用(1)
-                this._world.textureToggle();
                 break;
             case "z" :
                 this._turnBack();
@@ -156,10 +156,7 @@ export class CanvasManager{
                     let order = this._world.getOrder(i, target[i]);
                     newTarget.push([
                         null,
-                        {
-                            [KEY] : order,
-                            [POSITION] : position
-                        }
+                        {[KEY] : order,[POSITION] : position}
                     ])
                 }
             }
@@ -174,7 +171,39 @@ export class CanvasManager{
     }
 
     _stageRestart (){
+        let data = this._game.orgData;
 
+        this._game = new Game(data);
+
+        let target = [];
+
+        target.push([{[DESTINATION] : data.start, [KEY] : MOVE}]);
+        for (let box of data.boxs){
+            target.push([{[DESTINATION] : box, [KEY] : MOVE}]);
+        }
+
+        let length = this._world.moveObjectLength;
+        for (let i = 0; i < length; i++){
+            let state = this._world.getState(i);
+            if (state && state !== STATE_INIT){
+                let position = this._world.getPosition(i);
+                position.x /= SIDE;
+                position.z /= SIDE;
+
+                let order = this._world.getOrder(i, STATE_INIT);
+                target.push([
+                    null,
+                    {[KEY] : order,[POSITION] : position}
+                ])
+            }
+        }
+
+        this._animetionRequest = new Animation(target, this._tell, data.dir);
+        this._animetionRequest.init();
+
+        this._waiting = true;
+        
+        this._turnEnd();
     }
 
     _turnEnd (){
@@ -200,6 +229,7 @@ export class CanvasManager{
             if (req.isNext()){
                 req.next();
             }else {
+                this._main.setDirection(req.direction);
                 this._animetionRequest = null;
                 this._world.youNearCheck();
                 this._waiting = false;

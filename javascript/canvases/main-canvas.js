@@ -47,25 +47,14 @@ export class MainCanvas extends Canvas{
 		super.setCamera(vector);
 	}
 
-	startStageMode (data){
-		if(this._mode !== null) return;
-
-		this._camera = new THREE.PerspectiveCamera(60, this._canvas.clientWidth / this._canvas.clientHeight);
-
-		//カメラの向きをコントロールするクラスを取得
-		this._controls = new FirstPersonControls(this._camera, this._canvas);
-		this._controls.movementSpeed = 0;
-		this._controls.lookVertical = false;
-
-		//カメラの基準座標を設定
-		this._basisPosition.x = data.start.x * SIDE;
-		this._basisPosition.z = data.start.z * SIDE;
+	setDirection (direction){
+		if (!direction) return;
 
 		let x = this._basisPosition.x,
 			z = this._basisPosition.z;
 
 		//向きから補正座標を計算する
-		let rad = degToRad(DIRECTION[data.dir]),
+		let rad = degToRad(DIRECTION[direction]),
 			xd = RADIUS * Math.sin(rad),
 			zd = RADIUS * Math.cos(rad);	
 
@@ -84,6 +73,23 @@ export class MainCanvas extends Canvas{
 
 		//カメラの向きを取得しておく
 		this._last = this._camera.rotation.y;
+	}
+
+	startStageMode (data){
+		if(this._mode !== null) return;
+
+		this._camera = new THREE.PerspectiveCamera(60, this._canvas.clientWidth / this._canvas.clientHeight);
+
+		//カメラの向きをコントロールするクラスを取得
+		this._controls = new FirstPersonControls(this._camera, this._canvas);
+		this._controls.movementSpeed = 0;
+		this._controls.lookVertical = false;
+
+		//カメラの基準座標を設定
+		this._basisPosition.x = data.start.x * SIDE;
+		this._basisPosition.z = data.start.z * SIDE;
+
+		this.setDirection(data.dir);
 
 		//イベントの登録
 		this._moveMouseBind = this._mouseMove.bind(this);

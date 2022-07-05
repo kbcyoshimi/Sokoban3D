@@ -49,15 +49,18 @@ export class Animation{
     _target = null;
     //不足情報を補うための関数
     _tell;
+    //ディレクションの情報
+    _direction = null;
 
     //準備完了フラグ
     _ready = false;
 
     //値の代入と開始時間の設定を行う
-    constructor (target, tell){
+    constructor (target, tell, direction){
         this._startTime = performance.now();
         this._target = target;
         this._tell = tell;
+        if (direction) this._direction = direction;
     }
 
     //アニメーション要求の種類に応じた初期処理
@@ -436,5 +439,9 @@ export class Animation{
 
     getLength (){
         return this._target.length;
+    }
+
+    get direction (){
+        return this._direction;
     }
 }

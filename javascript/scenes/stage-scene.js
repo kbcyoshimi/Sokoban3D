@@ -563,18 +563,6 @@ export class StageScene extends Scene{
         this._useTextureMaterial[key].setValues({map : tex});
     }
 
-    //テスト用(1)
-    textureToggle (){
-        if (this._toggle[FLAG]){
-            this._textureApply(FLOOR, this._toggle[FLOOR]);
-            this._textureApply(WALL, this._toggle[WALL]);
-        }else{
-            this._textureApply(FLOOR, this._toggle[WALL]);
-            this._textureApply(WALL, this._toggle[FLOOR]);
-        }
-        this._toggle[FLAG] = !this._toggle[FLAG];
-    }
-
     //プレイヤーオブジェクトのモデル読み込みデータ作成
     _youModelDataCreate (position){
         let x = position.x * SIDE,
@@ -757,13 +745,6 @@ export class StageScene extends Scene{
 
         let texture = this._loadData[TEXTURE];
 
-        //テスト用(1)
-        this._toggle = {
-            [WALL] : null,
-            [FLOOR] : null,
-            [FLAG] : false
-        };
-
         //テクスチャデータの読み込み
         for(let i = 0; i < texture.length; i++){
             textureLoader.load(texture[i][URL], (tex) => {
@@ -775,8 +756,7 @@ export class StageScene extends Scene{
                 //読み込み完了フラグを有効化
                 texture[i][FLAG] = true;
                 this._loadComplete(callback);
-                //テスト用(1)
-                this._toggle[texture[i][KEY]] = tex;
+                
             }, null, () => {
                 console.log(i);
             });
@@ -977,6 +957,10 @@ export class StageScene extends Scene{
             [POSITION] : this.getPosition.bind(this),
             [CODE] : this.getMoveCode.bind(this)
         }
+    }
+
+    get moveObjectLength (){
+        return this._moveObject.length;
     }
 
     get you (){
