@@ -180,7 +180,12 @@ export class CanvasManager{
     }
 
     _turnWait (){
+        let target = this._game.wait();
+        
+        this._animetionRequest = new Animation(target, this._tell);
+        this._animetionRequest.init();
 
+        this._waiting = true;
     }
 
     _turnBack (){
