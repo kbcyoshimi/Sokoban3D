@@ -9,6 +9,8 @@ import { TitleScene } from "./scenes/title-scene";
 //正方形の1辺の長さ
 const SIDE = 100;
 
+const INFO = "#info";
+
 const NUMBER = "number";
 
 const KEY = "key";
@@ -21,27 +23,35 @@ const POSITION = "position";
 
 const STATE_INIT = 2;
 
+const STAGE_INIT = 1;
+const STAGE_URL_LEFT = "./stages/stage";
+const STAGE_URL_RIGHT = ".json";
+
 export class CanvasManager{
     
     _world;
     _game;
 
+    _info;
+    _clearMessage;
+
     _main;
     _map;
     _manual;
 
-    _stage;
+    _stage = STAGE_INIT;
 
     _animetionRequest = null;
     _tell = null;
     _waiting = false;
     _way;
 
-    _test;
-
     constructor (){
         
         this._world = new TitleScene();
+
+        this._info = document.querySelector(INFO);
+        this._clearMessageInit();
 
         this._main = new MainCanvas();
         this._map = new MapCanvas();
@@ -50,6 +60,43 @@ export class CanvasManager{
         this.tick();
 
         window.addEventListener("keydown", this._keydown.bind(this));
+    }
+
+    _clearMessageInit (){
+        let infoContainerDiv = document.createElement("div");
+        infoContainerDiv.setAttribute("id", "infoContainer");
+
+        let messageP = document.createElement("p");
+        messageP.setAttribute("id", "message");
+        messageP.textContent = "ステージ クリア！";
+
+        let nextDiv = document.createElement("div");
+        nextDiv.setAttribute("id", "next");
+        nextDiv.setAttribute("class", "selectArea");
+
+        let selectTextP1 = document.createElement("p");
+        selectTextP1.setAttribute("class", "selectText");
+        selectTextP1.textContent = "次のステージへ";
+
+        nextDiv.appendChild(selectTextP1);
+        nextDiv.addEventListener("click", this._stageEnd.bind({"manager" : this, "opinion" : "next"}));
+
+        let exitDiv = document.createElement("div");
+        exitDiv.setAttribute("id", "exit");
+        exitDiv.setAttribute("class", "selectArea");
+
+        let selectTextP2 = document.createElement("p");
+        selectTextP2.setAttribute("class", "selectText");
+        selectTextP2.textContent = "終了";
+
+        exitDiv.appendChild(selectTextP2);
+        exitDiv.addEventListener("click", this._stageEnd.bind({"manager" : this, "opinion" : "exit"}));
+
+        infoContainerDiv.appendChild(messageP);
+        infoContainerDiv.appendChild(nextDiv);
+        infoContainerDiv.appendChild(exitDiv);
+
+        this._clearMessage = infoContainerDiv;
     }
 
     _keydown (event){
@@ -67,7 +114,7 @@ export class CanvasManager{
 
     //現在は直接ステージに飛ぶ
     _titleKeydown (event){
-        this._getStageData("./stages/stage1.json");
+        this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
     }
 
     _stageKeydown (event){
@@ -92,6 +139,9 @@ export class CanvasManager{
                 break;
             case "z" :
                 this._turnBack();
+                break;
+            case "p" :
+                this._infoDisplay(this._clearMessage);
                 break;
             default:
                 break;
@@ -118,13 +168,12 @@ export class CanvasManager{
 
             let target = this._game.move(direction);
             target = JSON.parse(JSON.stringify(target));
+            console.log(JSON.parse(JSON.stringify(target)));
 
             this._animetionRequest = new Animation(target, this._tell);
             this._animetionRequest.init();
 
             this._waiting = true;
-
-            this._turnEnd();
         }else {
             console.log("notice : Cannot move to the " + direction);
         }
@@ -166,8 +215,6 @@ export class CanvasManager{
         this._animetionRequest.init();
 
         this._waiting = true;
-        
-        this._turnEnd();
     }
 
     _stageRestart (){
@@ -202,12 +249,61 @@ export class CanvasManager{
         this._animetionRequest.init();
 
         this._waiting = true;
-        
-        this._turnEnd();
     }
 
-    _turnEnd (){
-        this._way = this._game.moveCheck();
+    _turnEnd (direction){
+        if (this._game.goalCheck()){
+            this._infoDisplay(this._clearMessage);
+        }else {
+            this._way = this._game.moveCheck();
+            this._main.setDirection(direction);
+            this._world.youNearCheck();
+            this._waiting = false;
+        }
+    }
+
+    _stageEnd (){
+        console.log("end", this);
+        this.manager._infoDisplayClean();
+        this.manager._main.endStageMode();
+        this.manager._map.endStageMode();
+        this.manager._manual.endStageMode();
+
+        switch (this.opinion){
+            case "next" :
+                this.manager._nextStage();
+                break;
+            case "exit" :
+                this.manager._stageExit();
+                break;
+            default:
+        }
+
+    }
+
+    _nextStage (){
+        this._stage++;
+        this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+    }
+
+    _stageExit (){
+        this._stage = STAGE_INIT;
+        this._world = new TitleScene();
+        console.log(this._waiting);
+        this._waiting = false;
+    }
+    
+
+    _infoDisplay (document){
+        this._info.appendChild(document);
+        this._info.style.visibility = "visible";
+    }
+
+    _infoDisplayClean (){
+        this._info.style.visibility = "hidden";
+        while(this._info.firstChild){
+            this._info.removeChild(this._info.firstChild);
+        }
     }
 
     _animetion (){
@@ -229,10 +325,8 @@ export class CanvasManager{
             if (req.isNext()){
                 req.next();
             }else {
-                this._main.setDirection(req.direction);
                 this._animetionRequest = null;
-                this._world.youNearCheck();
-                this._waiting = false;
+                this._turnEnd(req.direction);
             }
         }else {
             for (let i = 0; i < req.getLength(); i++){
