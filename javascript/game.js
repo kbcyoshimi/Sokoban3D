@@ -174,21 +174,23 @@ export class Game{
 		this.convey(this._player,directionNum);
 		this.turnend();
 
-		//mapの状態を記録
-		this._mapHistories[this._turn] = JSON.parse(JSON.stringify(this._map));
+		//アニメーション情報を返す
+		return Array.from(this._animation);
+	}
 
-		//pieceの座標を保存
-		this.generatePiecePositions();
+	//待機
+	wait(){
+		console.log(this._turn + "ターン目開始")
+		//animation 初期化
+		this._preparedAnimation = new Array();
+		this._animation = new Array();
+		for(let i = 0; i < this._boxs.length + 1; i++){
+			this._animation[i] = new Array();
+		}
 
-		//アニメーション情報の形式を整える
-		this.convertAnimation();
+		this.turnend();
 
 		//アニメーション情報を返す
-		console.log((this._turn) + "ターン目終了");
-		//.log((this._turn) + "ターン目終了時のアニメーション情報");
-		//console.log(this._animation);
-		//console.log(this._map);
-		this._turn ++;
 		return Array.from(this._animation);
 	}
 
@@ -232,6 +234,18 @@ export class Game{
 				}
 			}
 		}
+
+		//mapの状態を記録
+		this._mapHistories[this._turn] = JSON.parse(JSON.stringify(this._map));
+
+		//pieceの座標を保存
+		this.generatePiecePositions();
+
+		//アニメーション情報の形式を整える
+		this.convertAnimation();
+
+		console.log((this._turn) + "ターン目終了");
+		this._turn ++;
 	}
 
 	//ゴールチェック
