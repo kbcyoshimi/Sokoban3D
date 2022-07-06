@@ -232,10 +232,6 @@ export class Game{
 				}
 			}
 		}
-		//ゴール処理
-		if(this._goalFlag){
-			console.log("\x1b[33m" + "ゲームクリア！！");
-		}
 	}
 
 	//ゴールチェック
