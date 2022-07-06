@@ -232,22 +232,23 @@ export class Game{
 				}
 			}
 		}
-		//ゴールチェック
+		//ゴール処理
+		if(this._goalFlag){
+			console.log("\x1b[33m" + "ゲームクリア！！");
+		}
+	}
+
+	//ゴールチェック
+	goalCheck(){
 		let goals = this.searchPositions(10010);
-		let goalFlag = true;
 		for(let goal of goals){
 			let x = goal.x;
 			let z = goal.z;
 			if(!this.existsBox(x, z)){
-				goalFlag = false;
-			}else{
-				//console.log("\x1b[33m" + JSON.stringify(goal) + "の上に荷物あります。")
+				return false;
 			}
 		}
-		//ゴール処理
-		if(goalFlag){
-			console.log("\x1b[33m" + "ゲームクリア！！");
-		}
+		return true;
 	}
 
 	//pieceに送る命令を振り分ける関数
