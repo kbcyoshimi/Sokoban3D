@@ -27,6 +27,8 @@ const STAGE_INIT = 1;
 const STAGE_URL_LEFT = "./stages/stage";
 const STAGE_URL_RIGHT = ".json";
 
+//15,(3,17),(5,18),(24,25)
+
 export class CanvasManager{
     
     _world;
@@ -40,6 +42,7 @@ export class CanvasManager{
     _manual;
 
     _stage = STAGE_INIT;
+    _turn = 0;
 
     _animetionRequest = null;
     _tell = null;
@@ -155,6 +158,9 @@ export class CanvasManager{
         this._map.startStageMode(data);
         this._manual.startStageMode(data);
 
+        let manual = this._manual.TextForMesh("ステージ" + this._stage + " " + "移動数 : " + this._turn);
+        this._world.initManual(manual);
+
         this._tell = this._world.tell;
 
         this._world.youNearCheck();
@@ -174,6 +180,9 @@ export class CanvasManager{
             this._animetionRequest.init();
 
             this._waiting = true;
+
+            //仮コード
+            this._turn++
         }else {
             console.log("notice : Cannot move to the " + direction);
         }
@@ -181,11 +190,14 @@ export class CanvasManager{
 
     _turnWait (){
         let target = this._game.wait();
-        
+
         this._animetionRequest = new Animation(target, this._tell);
         this._animetionRequest.init();
 
         this._waiting = true;
+
+        //仮コード
+        this._turn++
     }
 
     _turnBack (){
@@ -220,6 +232,9 @@ export class CanvasManager{
         this._animetionRequest.init();
 
         this._waiting = true;
+
+        //仮コード
+        this._turn--
     }
 
     _stageRestart (){
@@ -254,9 +269,15 @@ export class CanvasManager{
         this._animetionRequest.init();
 
         this._waiting = true;
+
+        //仮コード
+        this._turn = 0;
     }
 
     _turnEnd (direction){
+        let manual = this._manual.TextForTexture("ステージ" + this._stage + " " + "移動数 : " + this._turn);
+        this._world.updateManual(manual);
+
         if (this._game.goalCheck()){
             this._infoDisplay(this._clearMessage);
         }else {
@@ -268,11 +289,11 @@ export class CanvasManager{
     }
 
     _stageEnd (){
-        console.log("end", this);
         this.manager._infoDisplayClean();
         this.manager._main.endStageMode();
         this.manager._map.endStageMode();
         this.manager._manual.endStageMode();
+        this.manager._turn = 0;
 
         switch (this.opinion){
             case "next" :
@@ -294,7 +315,6 @@ export class CanvasManager{
     _stageExit (){
         this._stage = STAGE_INIT;
         this._world = new TitleScene();
-        console.log(this._waiting);
         this._waiting = false;
     }
     
