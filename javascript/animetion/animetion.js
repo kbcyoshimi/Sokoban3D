@@ -17,9 +17,11 @@ const TELEPORT = "teleport";
 
 const PUSH = "push";
 const PUSH_VALUE = 40;
+const PUSH_BOX_VALUE = -20;
 
 const PULL = "pull";
 const PULL_VALUE = -40;
+const PULL_BOX_VALUE = 20;
 
 const OPEN = "open";
 const OPEN_VALUE = -101;
@@ -75,10 +77,10 @@ export class Animation{
                         this._X_Z_Init(data, i, j);
                         break;
                     case PUSH :
-                        this._switchInit(data, PUSH_VALUE);
+                        this._pushInit(data);
                         break;
                     case PULL :
-                        this._switchInit(data, PULL_VALUE);
+                        this._pullInit(data, i);
                         break;
                     case OPEN :
                         this._doorInit(data, OPEN_VALUE);
@@ -93,6 +95,7 @@ export class Animation{
                 }
             }
         }
+        console.log(JSON.parse(JSON.stringify(this._target)));
         this._ready = true;
     }
 
@@ -115,6 +118,64 @@ export class Animation{
         data.distance = {"x" : x, "z" : z};
     }
 
+    _pushInit (data){
+        data.position.x *= SIDE;
+        data.position.z *= SIDE;
+
+        data.group = this._tell.position(this._switchCodeCheck(data), true);
+
+        data.distance = {"y" : PUSH_VALUE};
+
+        let pos = data.position;
+        let index = this._coordinateSearch(pos.x, pos.z, "destination");
+
+        if (!index) console.error("_destinationSearch関連のエラー");
+
+        let boxPosition = this._target[index].slice(-1)[0].destination;
+        data.box = {
+            "distance" : PUSH_BOX_VALUE,
+            "position" : boxPosition,
+            "index" : index
+        };
+    }
+
+    _pullInit (data, i){
+        data.position.x *= SIDE;
+        data.position.z *= SIDE;
+
+        data.group = this._tell.position(this._switchCodeCheck(data), true);
+
+        data.distance = {"y" : PULL_VALUE};
+
+        let index = this._tell.code(data.position, "box");
+
+        if (!index) console.error("_tell.code関連のエラー");
+
+        let boxPosition = this._tell.position(index);
+        data.box = {
+            "distance" : PULL_BOX_VALUE,
+            "position" : boxPosition,
+            "index" : index
+        };
+
+        //自身
+        this._target[i].shift();
+        //プレイヤーオブジェクト
+        this._target[0].unshift(null);
+        //荷物
+        this._target[index].unshift(null);
+
+        let boxDate = this._target[index].slice(-1)[0];
+        let destination = boxDate.destination;
+        index = this._coordinateSearch(destination.x, destination.z, "position");
+
+        if (index){
+            this._target[index].unshift(null);
+            index = this._keySearch(OPEN);
+            this._target[index].unshift(null);
+        }
+    }
+
     _switchInit (data, value){
         data.position.x *= SIDE;
         data.position.z *= SIDE;
@@ -131,7 +192,9 @@ export class Animation{
     }
 
     _fallInit (data, i, j){
-        data.position = this._target[i][j - 1].destination;
+        j ?
+        data.position = this._target[i][j - 1].destination:
+        data.position = this._tell.position(i);
 
         data.distance = {"y" : FALL_VALUE};
     }
@@ -172,12 +235,14 @@ export class Animation{
         let data = this._target[i][0];
         if (data === null) return null;
 
-        let result = i;
+        let result = [i];
 
         switch (data.key){
             case PUSH :
             case PULL :
-                result = this._switchCodeCheck(data);
+                result.shift();
+                result.push(this._switchCodeCheck(data));
+                result.push(data.box.index);
                 break;
             case OPEN :
             case CLOSE :
@@ -196,7 +261,7 @@ export class Animation{
 
     _doorCodeCheck (data){
         let code = this._tell.code(data.position, "door");
-        return code;
+        return [code];
     }
 
     distanceCalc (i){
@@ -244,10 +309,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, 0, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        }]
     }
 
     _pushCalc (data){
@@ -259,10 +324,27 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        let result = [];
+
+        result.push({
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        });
+
+        progressY = data.box.distance * this._progressRate;
+
+        x = data.box.position.x,
+        y = progressY,
+        z = data.box.position.z;
+
+        value = new THREE.Vector3(x, y, z);
+
+        result.push({
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        });
+
+        return result;
     }
 
     _pullCalc (data){
@@ -274,10 +356,27 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        let result = [];
+
+        result.push({
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        });
+
+        progressY = data.box.distance * this._progressRate;
+
+        x = data.box.position.x,
+        y = progressY + PUSH_BOX_VALUE,
+        z = data.box.position.z;
+
+        value = new THREE.Vector3(x, y, z);
+
+        result.push({
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        });
+
+        return result;
     }
 
     _openCalc (data, correction){
@@ -289,10 +388,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        }]
     }
 
     _closeCalc (data, correction){
@@ -304,10 +403,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        }]
     }
 
     _fall_Calc (data){
@@ -319,10 +418,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        }]
     }
 
     //ラップの最後の処理（ずれの調整など）
@@ -366,10 +465,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, 0, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
-        }
+        }]
     }
 
     _pushLast (data){
@@ -379,10 +478,25 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        let result = [];
+
+        result.push({
             [PROPERTYS] : [POSITION, STATE],
             [VALUES] : [value, STATE_DOWN]
-        }
+        });
+
+        x = data.box.position.x,
+        y = data.box.distance,
+        z = data.box.position.z;
+
+        value = new THREE.Vector3(x, y, z);
+
+        result.push({
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        });
+
+        return result;
     }
 
     _pullLast (data){
@@ -392,10 +506,25 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        let result = [];
+
+        result.push({
             [PROPERTYS] : [POSITION, STATE],
             [VALUES] : [value, STATE_UP]
-        }
+        });
+
+        x = data.box.position.x,
+        y = data.box.distance + PUSH_BOX_VALUE,
+        z = data.box.position.z;
+
+        value = new THREE.Vector3(x, y, z);
+
+        result.push({
+            [PROPERTYS] : [POSITION],
+            [VALUES] : [value]
+        });
+
+        return result;
     }
 
     _openLast (data, correction){
@@ -405,10 +534,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION, STATE],
             [VALUES] : [value, STATE_DOWN]
-        }
+        }]
     }
 
     _closeLast (data, correction){
@@ -418,10 +547,10 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION, STATE],
             [VALUES] : [value, STATE_UP]
-        }
+        }]
     }
 
     _fall_Last (data){
@@ -431,10 +560,35 @@ export class Animation{
 
         let value = new THREE.Vector3(x, y, z);
 
-        return {
+        return [{
             [PROPERTYS] : [POSITION],
             [VALUES] : [value]
+        }]
+    }
+
+    _coordinateSearch (x, z, property){
+        for (let i = 1; i < this._target.length; i++){
+            for (let j = 0; j < this._target[i].length; j++){
+                let data = this._target[i][j];
+                if (data === null) continue;
+                if (data[property] === null) continue;
+                let coord = data[property]; 
+                if (coord.x === x && coord.z === z) return i;
+            }
         }
+        return null;
+    }
+
+    _keySearch (key){
+        for (let i = 0; i < this._target.length; i++){
+            for (let j = 0; j < this._target[i].length; j++){
+                let data = this._target[i][j];
+                if (data === null) continue;
+                if (data["key"] === null) continue;
+                if (data["key"] === key) return i;
+            }
+        }
+        return null;
     }
 
     getLength (){

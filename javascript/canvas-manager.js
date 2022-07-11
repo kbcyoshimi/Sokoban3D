@@ -222,7 +222,7 @@ export class CanvasManager{
                     let order = this._world.getOrder(i, target[i]);
                     newTarget.push([
                         null,
-                        {[KEY] : order,[POSITION] : position}
+                        {[KEY] : order, [POSITION] : position}
                     ])
                 }
             }
@@ -345,7 +345,7 @@ export class CanvasManager{
                 let index = req.codeCheck(i);
                 let data = req.wrapLast(i);
                 this._world.move(index, data);
-                if (index === 0 && data !== null) this._main.setCamera(data.values[0]);
+                if (index !== null && index[0] === 0 && data !== null) this._main.setCamera(data[0].values[0]);
             }
             if (req.isNext()){
                 req.next();
@@ -358,7 +358,7 @@ export class CanvasManager{
                 let index = req.codeCheck(i);
                 let data = req.distanceCalc(i);
                 this._world.move(index, data);
-                if (index === 0 && data !== null) this._main.setCamera(data.values[0]);
+                if (index !== null && index[0] === 0 && data !== null) this._main.setCamera(data[0].values[0]);
             }
         }
     }
