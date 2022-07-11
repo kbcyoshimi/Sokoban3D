@@ -5,6 +5,7 @@ export class Piece{
 	_code;
 
 	_isDrop;
+	_isConvey;
 	_number;
 
 	constructor (x, z, code, number){
@@ -31,6 +32,10 @@ export class Piece{
 		return this._isDrop;
 	}
 
+	get isConvey (){
+		return this._isConvey;
+	}
+
 	get code (){
 		return this._code;
 	}
@@ -44,12 +49,17 @@ export class Piece{
 		this._isDrop = value;
 	}
 
+	//isConveyの値を変更
+	changeIsConvey (value){
+		this._isConvey = value;
+	}
+
 	//指定した座標に移動
 	move (x, z){
-		console.log("\u001b[32m" + JSON.stringify(this) + "から");
+		//console.log("\u001b[32m" + JSON.stringify(this) + "から");
 		this._x = x;
 		this._z = z;
-		console.log("\u001b[32m" + JSON.stringify(this) + "へ移動しました。");
+		//console.log("\u001b[32m" + JSON.stringify(this) + "へ移動しました。");
 	}
 
 	//穴に落ちる
