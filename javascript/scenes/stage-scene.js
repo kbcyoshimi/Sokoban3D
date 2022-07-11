@@ -299,6 +299,9 @@ export class StageScene extends Scene{
 
     //背景テクスチャ
     _backgroundTextre = null;
+
+    //ステージの情報
+    _manual = null;
     
     constructor (data){
         super("Stage");
@@ -829,6 +832,15 @@ export class StageScene extends Scene{
 
         //背景の適用
         this._scene.background = this._backgroundTextre;
+    }
+
+    initManual (mesh){
+        this._manual = mesh;
+        this.scene.add(mesh);
+    }
+
+    updateManual (texture){
+        this._manual.material.setValues({"map" : texture});
     }
 
     //プレイヤー周辺の荷物を半透明にする
