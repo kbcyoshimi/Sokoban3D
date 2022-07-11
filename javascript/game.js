@@ -12,6 +12,8 @@ export class Game{
 
 	_preparedAnimation;
 
+	_conveyCount;
+
 	_animation;
 	//[turn]
 	_mapHistories;
@@ -37,6 +39,8 @@ export class Game{
 			throw "ステージが正方形ではありません。";
 		}
 		this._mapLength = this._map.length;
+
+		this._conveyCount = 0;
 
 		this._preparedAnimation = null;
 		this._animation = null;
@@ -196,14 +200,43 @@ export class Game{
 
 	//ターンエンド時
 	turnend(){
-		//荷物
+		//フラグリセット
 		for(let box of this._boxs){
-			if(!box._isDrop){
-				this.pieceMove(box);
-			}
+			box.changeIsConvey(false);
 		}
-		//プレイヤー
-		this.pieceMove(this._player);
+		this._player.changeIsConvey(false);
+
+		while(true){
+			//荷物
+			for(let box of this._boxs){
+				if(!box._isDrop) {
+					this.pieceMove(box);
+				}
+			}
+			//プレイヤー
+			this.pieceMove(this._player);
+	
+			//コンベア移動があった場合、ループ続行
+			let count = 0;
+			for(let box of this._boxs){
+				if(box.isConvey) {
+					count++;
+				}
+			}
+
+			if(this._player.isConvey) {
+				count++;
+			}
+
+			if(!(count > this._conveyCount)) {
+				break;
+			}
+
+			this._conveyCount = count;
+		}
+		//カウント初期化
+		this._conveyCount = 0;
+
 		//スイッチON
 		//ここの機構は関数化して外に出すべきかもしれない。
 		const maxSwitchId = 9;
@@ -268,8 +301,10 @@ export class Game{
 		switch(extract(tile, 5)){
 			//ベルトコンベアー
 			case 4:
-				let direction = extract(tile,3);
-				this.convey(piece, direction);
+				if(!piece.isConvey){
+					let direction = extract(tile,3);
+					this.convey(piece, direction);
+				}
 				break;
 			//テレポート
 			case 5:
@@ -323,6 +358,11 @@ export class Game{
 		piece.move(destinationX, destinationZ);
 
 		this.generateAnimationD("move", destinationX, destinationZ, piece.number)
+
+		//コンベアで動いたフラグを建てる
+		piece.changeIsConvey(true);
+		//もう一度命令を振り分ける
+		this.pieceMove(piece);
 	}
 
 	//pieceにテレポートの命令を送る関数
