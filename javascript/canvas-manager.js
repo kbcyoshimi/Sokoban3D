@@ -121,18 +121,21 @@ export class CanvasManager{
     }
 
     _stageKeydown (event){
-        switch (event.key) {
+        let direction;
+        switch (event.key) {    
             case "ArrowLeft":
-                this._turnMove("left");
+                this._main.turnLeft();
                 break;
             case "ArrowUp":
-                this._turnMove("up");
+                direction = this._main.getDirection();
+                this._turnMove(direction);
                 break;
             case "ArrowRight":
-                this._turnMove("right");
+                this._main.turnRight();
                 break;
             case "ArrowDown":
-                this._turnMove("down");
+                direction = this._main.getDirectionReverse();
+                this._turnMove(direction);
                 break;
             case " ":
                 this._turnWait();
