@@ -290,7 +290,10 @@ export class CanvasManager{
                 this._pause();
                 break;
             case "c" :
-                if (event.ctrlKey && event.altKey) this._infoDisplay(this._clearMessage);
+                if (event.ctrlKey && event.altKey) {
+                    this._stage++;
+                    this._infoDisplay(this._clearMessage);
+                }
                 break;
             default:
                 break;
