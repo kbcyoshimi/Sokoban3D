@@ -23,8 +23,8 @@ const POSITION = "position";
 
 const STATE_INIT = 2;
 
-const STAGE_INIT = 1;
-const STAGE_FINAL = 49; 
+const STAGE_INIT = 49;
+const STAGE_FINAL = 48; 
 const STAGE_URL_LEFT = "./stages/stage";
 const STAGE_URL_RIGHT = ".json";
 
