@@ -45,6 +45,7 @@ export class CanvasManager{
     _map;
     _manual;
 
+    _inputStage = 0;
     _stage = STAGE_INIT;
     _turn = 0;
 
@@ -255,8 +256,20 @@ export class CanvasManager{
                 val.finish();
             });
         } else{
-            this._infoDisplayClean();
-            this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+            if (event.key === "Enter"){
+                if (this._inputStage) this._stage = this._inputStage;
+                this._infoDisplayClean();
+                this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+            }else {
+                let key = Number(event.key);
+                if (isNaN(key)) return;
+                if (event.ctrlKey && event.altKey){
+                    this._inputStage *= 10;
+                    this._inputStage += key;
+                    if (this._inputStage > STAGE_FINAL) this._inputStage = 0;
+                    console.log("input : " + this._inputStage);
+                }
+            }
         }
     }
 
@@ -290,7 +303,10 @@ export class CanvasManager{
                 this._pause();
                 break;
             case "c" :
-                if (event.ctrlKey && event.altKey) this._infoDisplay(this._clearMessage);
+                if (event.ctrlKey && event.altKey) {
+                    this._stage++;
+                    this._infoDisplay(this._clearMessage);
+                }
                 break;
             default:
                 break;
