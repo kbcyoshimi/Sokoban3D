@@ -260,6 +260,7 @@ export class CanvasManager{
                 if (this._inputStage) this._stage = this._inputStage;
                 this._infoDisplayClean();
                 this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+                this._inputStage = 0;
             }else {
                 let key = Number(event.key);
                 if (isNaN(key)) return;
@@ -304,6 +305,7 @@ export class CanvasManager{
                 break;
             case "c" :
                 if (event.ctrlKey && event.altKey) {
+                    this._waiting = true;
                     this._stage++;
                     this._infoDisplay(this._clearMessage);
                 }
