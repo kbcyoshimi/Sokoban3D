@@ -119,6 +119,7 @@ export class Animation{
     }
 
     _pushInit (data){
+        if (data.flag) return;
         data.position.x *= SIDE;
         data.position.z *= SIDE;
 
@@ -137,6 +138,21 @@ export class Animation{
             "position" : boxPosition,
             "index" : index
         };
+
+        let boxDestination = data.box.position;
+
+        console.log(boxDestination);
+
+        index = this._coordinateSearch(boxDestination.x, boxDestination.z, "position");
+
+        console.log(index);
+
+        if (index){
+            data.flag = true;
+            this._target[index].unshift(null);
+            index = this._keySearch(OPEN);
+            this._target[index].unshift(null);
+        }
     }
 
     _pullInit (data, i){
@@ -165,8 +181,8 @@ export class Animation{
         //荷物
         this._target[index].unshift(null);
 
-        let boxDate = this._target[index].slice(-1)[0];
-        let destination = boxDate.destination;
+        let boxData = this._target[index].slice(-1)[0];
+        let destination = boxData.destination;
         index = this._coordinateSearch(destination.x, destination.z, "position");
 
         if (index){
