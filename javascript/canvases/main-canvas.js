@@ -25,8 +25,8 @@ export class MainCanvas extends Canvas{
 	_controls = null;
 
 	_move = false;
-	_moveMouseBind;
-	_moveStartBind;
+	_mouseMoveBind;
+	_mouseDownBind;
 	_moveEndBind;
 
 	_basisPosition = {
@@ -72,8 +72,6 @@ export class MainCanvas extends Canvas{
 		let phi = degToRad(90),
 			theta = rad;
 		this._theta = rad;
-
-		console.log(THREE.MathUtils.radToDeg(this._theta));
 
 		//座標の反映
 		this._camera.position.set(x + xd, 0, z + zd);
@@ -157,11 +155,11 @@ export class MainCanvas extends Canvas{
 		this.setDirection(data.dir);
 
 		//イベントの登録
-		this._moveMouseBind = this._mouseMove.bind(this);
-		this._moveStartBind = this._mouseMoveStart.bind(this);
+		this._mouseMoveBind = this._mouseMove.bind(this);
+		this._mouseDownBind = this._mouseDownStart.bind(this);
 		this._moveEndBind = this._mouseMoveEnd.bind(this);
-		this._canvas.addEventListener("mousemove", this._moveMouseBind);
-		this._canvas.addEventListener("mousedown", this._moveStartBind);
+		this._canvas.addEventListener("mousemove", this._mouseMoveBind);
+		this._canvas.addEventListener("mousedown", this._mouseDownBind);
 		this._canvas.addEventListener("mouseup", this._moveEndBind);
 		this._canvas.addEventListener("mouseleave", this._moveEndBind);
 
@@ -169,8 +167,8 @@ export class MainCanvas extends Canvas{
 	}
 
 	endStageMode (){
-		this._canvas.removeEventListener("mousemove", this._moveMouseBind);
-		this._canvas.removeEventListener("mousedown", this._moveStartBind);
+		this._canvas.removeEventListener("mousemove", this._mouseMoveBind);
+		this._canvas.removeEventListener("mousedown", this._mouseDownBind);
 		this._canvas.removeEventListener("mouseup", this._moveEndBind);
 		this._canvas.removeEventListener("mouseleave", this._moveEndBind);
 
@@ -197,8 +195,6 @@ export class MainCanvas extends Canvas{
 			//１つ前の角度を保持
 			this._last = this._camera.rotation.y;
 
-			console.log(THREE.MathUtils.radToDeg(this._theta));
-
 			//座標の計算
 			let x = this._basisPosition.x,
 				z = this._basisPosition.z,
@@ -219,12 +215,21 @@ export class MainCanvas extends Canvas{
 	}
 
 	//ドラッグの開始
-	_mouseMoveStart (){
+	_mouseDownStart (event){
+		if (event.button === 2){
+			this._rightDown();
+			return;
+		}
 		this._move = true;
 	}
 
 	//ドラッグの終了
 	_mouseMoveEnd (){
 		this._move = false;
+	}
+
+	_rightDown (){
+		let direction = this._directionCheck();
+		this.setDirection(direction);
 	}
 }
