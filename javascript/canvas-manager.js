@@ -289,6 +289,9 @@ export class CanvasManager{
             case "p" :
                 this._pause();
                 break;
+            case "c" :
+                if (event.ctrlKey && event.altKey) this._infoDisplay(this._clearMessage);
+                break;
             default:
                 break;
         }
