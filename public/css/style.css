@@ -433,6 +433,10 @@ div.selectArea{
     margin-bottom: 5%;
 }
 
+div.selectArea.center{
+    top: 15%;
+}
+
 div.selectArea:hover{
     transform: translateY(4px);
     box-shadow: none;
