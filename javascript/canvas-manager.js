@@ -35,6 +35,7 @@ export class CanvasManager{
     _game;
 
     _info;
+    _titleMessage;
     _clearMessage;
 
     _main;
@@ -54,7 +55,10 @@ export class CanvasManager{
         this._world = new TitleScene();
 
         this._info = document.querySelector(INFO);
+        this._titleMessageInit();
         this._clearMessageInit();
+
+        this._infoDisplay(this._titleMessage);
 
         this._main = new MainCanvas();
         this._map = new MapCanvas();
@@ -63,6 +67,64 @@ export class CanvasManager{
         this.tick();
 
         window.addEventListener("keydown", this._keydown.bind(this));
+    }
+
+    _titleMessageInit (){
+        let infoContainerDiv = document.createElement("div");
+        infoContainerDiv.setAttribute("id", "infoContainer");
+
+        let titleDiv = document.createElement("div");
+        titleDiv.setAttribute("id", "title");
+        
+        let titleLine1 = document.createElement("div");
+        titleLine1.setAttribute("id", "titleLine1");
+
+        let titleLine2 = document.createElement("div");
+        titleLine2.setAttribute("id", "titleLine2");
+
+        let parts1 = document.createElement("p"),
+            parts2 = document.createElement("p"),
+            parts3 = document.createElement("p"),
+            parts4 = document.createElement("p"),
+            parts5 = document.createElement("p"),
+            parts6 = document.createElement("p"),
+            parts7 = document.createElement("p"),
+            parts8 = document.createElement("p");
+
+        parts1.setAttribute("id", "parts1");
+        parts2.setAttribute("id", "parts2");
+        parts3.setAttribute("id", "parts3");
+        parts4.setAttribute("id", "parts4");
+        parts5.setAttribute("id", "parts5");
+        parts6.setAttribute("id", "parts6");
+        parts7.setAttribute("id", "parts7");
+        parts8.setAttribute("id", "parts8");
+
+        parts1.textContent = "S";
+        parts2.textContent = "O";
+        parts3.textContent = "K";
+        parts4.textContent = "O";
+        parts5.textContent = "B";
+        parts6.textContent = "A";
+        parts7.textContent = "N";
+        parts8.textContent = "3D";
+
+        titleLine1.appendChild(parts1);
+        titleLine1.appendChild(parts2);
+        titleLine1.appendChild(parts3);
+        titleLine1.appendChild(parts4);
+        titleLine1.appendChild(parts5);
+        titleLine1.appendChild(parts6);
+        titleLine1.appendChild(parts7);
+
+        titleLine2.appendChild(parts8);
+
+        titleDiv.appendChild(titleLine1);
+        titleDiv.appendChild(titleLine2);
+
+        infoContainerDiv.appendChild(titleDiv);
+
+        this._titleMessage = infoContainerDiv;
     }
 
     _clearMessageInit (){
@@ -117,7 +179,18 @@ export class CanvasManager{
 
     //現在は直接ステージに飛ぶ
     _titleKeydown (event){
-        this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+        let isRunning = document.getAnimations().some(val => {
+            return val.playState === "running";
+        });
+
+        if (isRunning){
+            document.getAnimations().forEach(val => {
+                val.finish();
+            });
+        } else{
+            this._infoDisplayClean();
+            this._getStageData(STAGE_URL_LEFT + this._stage + STAGE_URL_RIGHT);
+        }
     }
 
     _stageKeydown (event){
@@ -318,6 +391,7 @@ export class CanvasManager{
     _stageExit (){
         this._stage = STAGE_INIT;
         this._world = new TitleScene();
+        this._infoDisplay(this._titleMessage);
         this._waiting = false;
     }
     
