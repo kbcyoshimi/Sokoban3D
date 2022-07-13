@@ -304,6 +304,7 @@ export class CanvasManager{
                 break;
             case "c" :
                 if (event.ctrlKey && event.altKey) {
+                    this._waiting = true;
                     this._stage++;
                     this._infoDisplay(this._clearMessage);
                 }
