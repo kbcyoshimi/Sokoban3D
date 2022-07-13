@@ -882,10 +882,20 @@ export class StageScene extends Scene{
         }
     }
 
+    move (codes, datas){
+        if (codes === null) return;
+        if (datas === null) return;
+
+        if (codes.length !== datas.length) console.warn("キーと値の数が一致していません。");
+        let length = Math.min(codes.length, datas.length);
+
+        for (let i = 0; i < length; i++){
+            this._moves(codes[i], datas[i]);
+        }
+    }
+
     //対応するオブジェクトに受け取ったデータを適用する
-    move (code, data){
-        if (code === null) return;
-        if (data === null) return;
+    _moves (code, data){
 
         //キーと対応する値を取得する
         let propertys = data.propertys,

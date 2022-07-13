@@ -8,6 +8,15 @@ const RADIUS = 5;
 const SIDE = 100;
 const DIRECTION = [null, 270, 180, 90, 0];
 
+const DIRECTION_NAME = [null, "left", "up", "right", "down"];
+const DIRECTION_NAME_REVERSE = [null, "right", "down", "left", "up"];
+
+const DEG360 = 360;
+const BIAS = 45;
+
+const TUEN_N = 10;
+const SLEEP = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 //度をラジアンに変換する関数
 const degToRad = THREE.MathUtils.degToRad;
 
@@ -47,20 +56,24 @@ export class MainCanvas extends Canvas{
 		super.setCamera(vector);
 	}
 
-	setDirection (direction){
-		if (!direction) return;
+	setDirection (direction, isDirect){
+		if (direction === null || direction === undefined) return;
 
 		let x = this._basisPosition.x,
 			z = this._basisPosition.z;
 
 		//向きから補正座標を計算する
-		let rad = degToRad(DIRECTION[direction]),
-			xd = RADIUS * Math.sin(rad),
+		let rad = 0;
+		isDirect ? rad = direction : rad = degToRad(DIRECTION[direction]);
+
+		let xd = RADIUS * Math.sin(rad),
 			zd = RADIUS * Math.cos(rad);	
 
 		let phi = degToRad(90),
 			theta = rad;
 		this._theta = rad;
+
+		console.log(THREE.MathUtils.radToDeg(this._theta));
 
 		//座標の反映
 		this._camera.position.set(x + xd, 0, z + zd);
@@ -73,6 +86,58 @@ export class MainCanvas extends Canvas{
 
 		//カメラの向きを取得しておく
 		this._last = this._camera.rotation.y;
+	}
+
+	_directionCheck (){
+		let diff = [];
+		let index = 1;
+
+		let degTheta = THREE.MathUtils.radToDeg(this._theta);
+
+		for (let i = 0; i < DIRECTION.length; i++){
+			let direction = DIRECTION[i];
+			if (direction === null) continue;
+			
+			if (degTheta > DEG360 - BIAS) degTheta -= DEG360;
+			diff[i] = Math.abs(degTheta - direction);
+			
+			index = (diff[index] < diff[i]) ? index : i;
+		}
+
+		return index;
+	}
+
+	async turnRight (){
+		for (let i = 0; i < TUEN_N; i++){
+			let direction = this._theta + degToRad(-9);
+			let degToRad360 = degToRad(360);
+			if (direction < 0) direction += degToRad360;
+			this.setDirection(direction, true);
+			await SLEEP(10);
+		}
+		
+	}
+
+	async turnLeft (){
+		for (let i = 0; i < TUEN_N; i++){
+			let direction = this._theta + degToRad(9);
+			let degToRad360 = degToRad(360);
+			if (direction > degToRad360) direction -= degToRad360;
+			this.setDirection(direction, true);
+			await SLEEP(10);
+		}
+	}
+
+	getDirection (){
+		let index = this._directionCheck();
+
+		return DIRECTION_NAME[index];
+	}
+
+	getDirectionReverse (){
+		let index = this._directionCheck();
+
+		return DIRECTION_NAME_REVERSE[index];
 	}
 
 	startStageMode (data){
@@ -126,11 +191,13 @@ export class MainCanvas extends Canvas{
 			this._theta += diff:
 			this._theta -= diff;
 			//角度を0~360の範囲で維持する
-			let deg360 = degToRad(360);
-			if (this._theta < 0) this._theta += deg360;
-			if (this._theta > deg360) this._theta -= deg360;
+			let degToRad360 = degToRad(360);
+			if (this._theta < 0) this._theta += degToRad360;
+			if (this._theta > degToRad360) this._theta -= degToRad360;
 			//１つ前の角度を保持
 			this._last = this._camera.rotation.y;
+
+			console.log(THREE.MathUtils.radToDeg(this._theta));
 
 			//座標の計算
 			let x = this._basisPosition.x,
