@@ -855,18 +855,20 @@ export class StageScene extends Scene{
             if (obj[NAME] === BOX) boxes.push(i);
         }
 
-        let codes = [];
+        let boxCodes = [];
         for (let diff of YOU_NEAR){
             let x = position.x + diff.x,
                 z = position.z + diff.z;
-            let code = this.getMoveCode({"x" : x, "z" : z}, BOX);
-            if (code) {
-                if (this._moveObject[code][POSITION].y !== BOX_FALL_Y) codes.push(code);
+            let codes = this.getMoveCode({"x" : x, "z" : z}, BOX, true);
+            if (codes.length) {
+                for (let code of codes){
+                    if (this._moveObject[code][POSITION].y !== BOX_FALL_Y) boxCodes.push(code);
+                }
             };
         }
 
         for (let i = 0; i < boxes.length; i++){
-            if (codes.includes(i + 1)){
+            if (boxCodes.includes(i + 1)){
                 for (let boxMeshName of BOX_MESH){
                     let mesh = this._moveObject[i + 1].getObjectByName(boxMeshName);
                     mesh.material[TRANSPARENT] = true;
@@ -933,8 +935,9 @@ export class StageScene extends Scene{
         }
     }
 
-    getMoveCode (position, name){
-        let result = null;
+    getMoveCode (position, name, isMulti){
+        let result;
+        isMulti ? result = [] : result = null;
         let x = position.x,
             z = position.z;
         
@@ -943,7 +946,10 @@ export class StageScene extends Scene{
             let obj = objs[i];
             if (!obj) continue;
             if (obj[NAME] !== name) continue;
-            if (obj[POSITION].x === x && obj[POSITION].z === z) return i;
+            if (obj[POSITION].x === x && obj[POSITION].z === z){
+                if (isMulti) result.push(i);
+                else return i;
+            }
         }
 
         return result;
