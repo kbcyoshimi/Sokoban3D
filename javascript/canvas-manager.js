@@ -23,7 +23,7 @@ const POSITION = "position";
 
 const STATE_INIT = 2;
 
-const STAGE_INIT = 49;
+const STAGE_INIT = 1;
 const STAGE_FINAL = 48; 
 const STAGE_URL_LEFT = "./stages/stage";
 const STAGE_URL_RIGHT = ".json";
@@ -224,7 +224,7 @@ export class CanvasManager{
         selectTextP.textContent = "終了";
 
         exitDiv.appendChild(selectTextP);
-        exitDiv.addEventListener("click", this._stageExit.bind(this));
+        exitDiv.addEventListener("click", this._stageEnd.bind({"manager" : this, "opinion" : "exit"}));
 
         infoContainerDiv.appendChild(messageP);
         infoContainerDiv.appendChild(exitDiv);
